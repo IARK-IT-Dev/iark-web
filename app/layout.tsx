@@ -21,6 +21,28 @@ export const metadata: Metadata = {
     icon: '/logos/iark-logo.png',
     apple: '/logos/iark-logo.png',
   },
+  openGraph: {
+    title: "IARK - Ikatan Alumni Rumah Kepemimpinan",
+    description: "Wadah kolaborasi alumni Rumah Kepemimpinan yang menumbuhkan semangat kepemimpinan sejati dan berdampak",
+    url: 'https://ia-rk.com',
+    siteName: 'IARK',
+    images: [
+      {
+        url: '/logos/iark-logo.png',
+        width: 1200,
+        height: 630,
+        alt: 'IARK Logo',
+      },
+    ],
+    locale: 'id_ID',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "IARK - Ikatan Alumni Rumah Kepemimpinan",
+    description: "Wadah kolaborasi alumni Rumah Kepemimpinan yang menumbuhkan semangat kepemimpinan sejati dan berdampak",
+    images: ['/logos/iark-logo.png'],
+  },
 };
 
 export default function RootLayout({
