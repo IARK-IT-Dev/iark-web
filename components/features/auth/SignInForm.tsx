@@ -1,35 +1,62 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { useState } from 'react';
-import { SocialButton } from './SocialButton';
-import { useAuth } from '@/components/providers/AuthContext';
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { useState } from "react";
+import { SocialButton } from "./SocialButton";
+import { useAuth } from "@/components/providers/AuthContext";
+import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 export function SignInForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { login } = useAuth();
+  const router = useRouter();
+  const supabase = createClient();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg("");
+    setLoading(true);
 
-    // Simple validation: email and password must not be empty
-    if (email.trim() && password.trim()) {
-      login(email);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setLoading(false);
+
+    if (error) {
+      setErrorMsg(error.message);
+      return;
     }
+    await supabase.auth.getSession();
+    router.push("/dashboard");
   };
 
-  const handleGoogleSignIn = () => {
-    // Mock Google sign in - using a default email
-    login('user@google.com', 'Google User');
+  const handleGoogleSignIn = async () => {
+    setErrorMsg("");
+    setLoading(true);
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${location.origin}/auth/callback`,
+      },
+    });
+
+    setLoading(false);
+    if (error) setErrorMsg(error.message);
   };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: 'easeOut' }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
       className="w-full max-w-md mx-auto"
     >
       <div className="bg-white rounded-2xl shadow-2xl p-8 md:p-10">
@@ -62,7 +89,10 @@ export function SignInForm() {
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Email Field */}
           <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+            <label
+              htmlFor="email"
+              className="block text-sm font-semibold text-gray-700 mb-2"
+            >
               Email
             </label>
             <input
@@ -78,7 +108,10 @@ export function SignInForm() {
 
           {/* Password Field */}
           <div>
-            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+            <label
+              htmlFor="password"
+              className="block text-sm font-semibold text-gray-700 mb-2"
+            >
               Password
             </label>
             <input
@@ -108,7 +141,7 @@ export function SignInForm() {
             className="w-full bg-iark-red text-white font-bold py-3 rounded-lg hover:bg-red-700 transition-colors shadow-lg"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
           >
             Masuk
           </motion.button>
@@ -116,8 +149,11 @@ export function SignInForm() {
 
         {/* Sign Up Link */}
         <div className="mt-6 text-center text-sm text-gray-600">
-          Belum punya akun?{' '}
-          <Link href="/daftar" className="text-iark-red hover:underline font-semibold">
+          Belum punya akun?{" "}
+          <Link
+            href="/daftar"
+            className="text-iark-red hover:underline font-semibold"
+          >
             Daftar sekarang
           </Link>
         </div>
