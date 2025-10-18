@@ -1,10 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { useState } from "react";
-import { SocialButton } from "./SocialButton";
-import { useAuth } from "@/components/providers/AuthContext";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
@@ -12,7 +9,7 @@ export function SignInForm() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
@@ -22,34 +19,33 @@ export function SignInForm() {
     setErrorMsg("");
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { data: profile, error: lookupError } = await supabase
+        .from("profiles")
+        .select("email")
+        .eq("username", username)
+        .single();
 
-    setLoading(false);
+      if (lookupError || !profile) {
+        throw new Error("Username not found");
+      }
 
-    if (error) {
+      const { data, error: loginError } =
+        await supabase.auth.signInWithPassword({
+          email: profile.email,
+          password,
+        });
+
+      if (loginError) {
+        throw new Error("Invalid password");
+      }
+
+      router.push("/dashboard");
+    } catch (error: any) {
       setErrorMsg(error.message);
-      return;
+    } finally {
+      setLoading(false);
     }
-    await supabase.auth.getSession();
-    router.push("/dashboard");
-  };
-
-  const handleGoogleSignIn = async () => {
-    setErrorMsg("");
-    setLoading(true);
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${location.origin}/auth/callback`,
-      },
-    });
-
-    setLoading(false);
-    if (error) setErrorMsg(error.message);
   };
 
   return (
@@ -70,37 +66,22 @@ export function SignInForm() {
           </p>
         </div>
 
-        {/* Social Login */}
-        <div className="mb-6">
-          <SocialButton provider="google" onClick={handleGoogleSignIn} />
-        </div>
-
-        {/* Divider */}
-        <div className="relative my-6">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-white text-gray-500">atau</span>
-          </div>
-        </div>
-
-        {/* Email/Password Form */}
+        {/* Username/Password Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Email Field */}
+          {/* Username Field */}
           <div>
             <label
-              htmlFor="email"
+              htmlFor="username"
               className="block text-sm font-semibold text-gray-700 mb-2"
             >
-              Email
+              Username
             </label>
             <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="nama@email.com"
+              id="username"
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="username Anda"
               className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-iark-red focus:outline-none transition-colors text-gray-900 placeholder:text-gray-400"
               required
             />
@@ -125,38 +106,29 @@ export function SignInForm() {
             />
           </div>
 
-          {/* Forgot Password Link */}
-          <div className="text-right">
-            <Link
-              href="/lupa-password"
-              className="text-sm text-iark-red hover:underline font-semibold"
-            >
-              Lupa password?
-            </Link>
-          </div>
+          {/* Error Message */}
+          {errorMsg && (
+            <p className="text-red-600 text-sm font-medium text-center">
+              {errorMsg}
+            </p>
+          )}
 
           {/* Submit Button */}
           <motion.button
             type="submit"
-            className="w-full bg-iark-red text-white font-bold py-3 rounded-lg hover:bg-red-700 transition-colors shadow-lg"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            disabled={loading}
+            className={`w-full font-bold py-3 rounded-lg shadow-lg text-white transition-colors ${
+              loading
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-iark-red hover:bg-red-700"
+            }`}
+            whileHover={{ scale: loading ? 1 : 1.02 }}
+            whileTap={{ scale: loading ? 1 : 0.98 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
           >
-            Masuk
+            {loading ? "Memproses..." : "Masuk"}
           </motion.button>
         </form>
-
-        {/* Sign Up Link */}
-        <div className="mt-6 text-center text-sm text-gray-600">
-          Belum punya akun?{" "}
-          <Link
-            href="/daftar"
-            className="text-iark-red hover:underline font-semibold"
-          >
-            Daftar sekarang
-          </Link>
-        </div>
       </div>
     </motion.div>
   );
