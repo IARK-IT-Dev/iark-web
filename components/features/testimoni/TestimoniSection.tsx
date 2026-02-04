@@ -1,28 +1,54 @@
 'use client';
 
-import { useState } from 'react';
-import { TestimoniSlider } from './TestimoniSlider';
-import { testimonialData } from '@/lib/data/testimonialData';
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import type { Database } from '@/lib/supabase/types';
+import Image from 'next/image';
+import Link from 'next/link';
+
+type Story = Database['public']['Tables']['stories']['Row'];
+type Profile = Database['public']['Tables']['profiles']['Row'];
+
+interface StoryWithAuthor extends Story {
+  profiles: Pick<Profile, 'name' | 'photo' | 'angkatan'> | null;
+}
 
 export interface TestimoniSectionProps {
   className?: string;
 }
 
-type FilterType = 'all' | 'ketua_angkatan' | 'tokoh_ternama';
-
 export function TestimoniSection({ className = '' }: TestimoniSectionProps) {
-  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [stories, setStories] = useState<StoryWithAuthor[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filters: { label: string; value: FilterType }[] = [
-    { label: 'Semua', value: 'all' },
-    { label: 'Ketua Angkatan', value: 'ketua_angkatan' },
-    { label: 'Tokoh Ternama', value: 'tokoh_ternama' },
-  ];
+  useEffect(() => {
+    async function fetchStories() {
+      const supabase = createClient();
+      
+      const { data, error } = await supabase
+        .from('stories')
+        .select(`
+          *,
+          profiles:author_id (
+            name,
+            photo,
+            angkatan
+          )
+        `)
+        .eq('status', 'published')
+        .order('published_at', { ascending: false })
+        .limit(3);
 
-  const filteredTestimonials =
-    activeFilter === 'all'
-      ? testimonialData
-      : testimonialData.filter((t) => t.type === activeFilter);
+      if (error) {
+        console.error('Error fetching stories:', error);
+      } else {
+        setStories(data as StoryWithAuthor[]);
+      }
+      setLoading(false);
+    }
+
+    fetchStories();
+  }, []);
 
   return (
     <section className={`relative py-24 px-8 bg-white overflow-hidden ${className}`}>
@@ -45,7 +71,7 @@ export function TestimoniSection({ className = '' }: TestimoniSectionProps) {
 
         {/* Title */}
         <h2 className="text-4xl md:text-5xl font-bold text-center mb-6 text-iark-black">
-          Cerita Alumni
+          Kebanggaan Komunitas
         </h2>
 
         {/* Subtitle */}
@@ -53,28 +79,107 @@ export function TestimoniSection({ className = '' }: TestimoniSectionProps) {
           Kisah inspiratif dan blog dari para alumni yang terus berkontribusi
         </p>
 
-        {/* Filter Tabs */}
-        <div className="flex justify-center gap-2 mb-12 flex-wrap">
-          {filters.map((filter) => (
-            <button
-              key={filter.value}
-              onClick={() => setActiveFilter(filter.value)}
-              className={`px-6 py-3 rounded-full font-medium transition-all duration-300 ${
-                activeFilter === filter.value
-                  ? 'bg-iark-red text-white shadow-lg'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
+        {/* Loading State */}
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-gray-100 rounded-2xl h-96 animate-pulse" />
+            ))}
+          </div>
+        ) : stories.length === 0 ? (
+          <p className="text-center text-gray-500">Belum ada cerita yang dipublikasikan.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {stories.map((story) => (
+              <Link
+                key={story.id}
+                href={`/stories/${story.slug}`}
+                className="group bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+              >
+                {/* Hero Image */}
+                <div className="relative h-48 overflow-hidden">
+                  {story.hero_image ? (
+                    <Image
+                      src={story.hero_image}
+                      alt={story.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-iark-blue/20 to-iark-yellow/20" />
+                  )}
+                  <div className="absolute top-4 left-4">
+                    <span className="px-3 py-1 bg-iark-red text-white text-sm font-medium rounded-full">
+                      {story.category}
+                    </span>
+                  </div>
+                </div>
 
-        {/* Testimonials Slider */}
-        <TestimoniSlider
-          testimonials={filteredTestimonials}
-          autoPlayInterval={6000}
-        />
+                {/* Content */}
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-iark-black mb-2 line-clamp-2 group-hover:text-iark-red transition-colors">
+                    {story.title}
+                  </h3>
+                  {story.excerpt && (
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                      {story.excerpt}
+                    </p>
+                  )}
+
+                  {/* Author */}
+                  <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100">
+                    <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200">
+                      {story.profiles?.photo ? (
+                        <Image
+                          src={story.profiles.photo}
+                          alt={story.profiles.name || 'Author'}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-iark-black">
+                        {story.profiles?.name || 'Anonim'}
+                      </p>
+                      {story.profiles?.angkatan && (
+                        <p className="text-xs text-gray-500">
+                          Angkatan {story.profiles.angkatan}
+                        </p>
+                      )}
+                    </div>
+                    {story.read_time && (
+                      <span className="ml-auto text-xs text-gray-400">
+                        {story.read_time}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* View All Link */}
+        {!loading && stories.length > 0 && (
+          <div className="text-center mt-12">
+            <Link
+              href="/stories"
+              className="inline-flex items-center gap-2 px-8 py-3 bg-iark-red text-white font-medium rounded-full hover:bg-iark-red/90 transition-colors"
+            >
+              Lihat Semua Cerita
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

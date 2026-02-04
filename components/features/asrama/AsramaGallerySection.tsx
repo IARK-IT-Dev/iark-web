@@ -1,13 +1,46 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { DormCard } from './DormCard';
-import { dormitoryData } from '@/lib/data/dormitoryData';
+import { createClient } from '@/lib/supabase/client';
+
+export interface Dormitory {
+  id: string;
+  name: string;
+  city: string;
+  province: string;
+  image_url: string;
+  total_rooms: number;
+  occupied_rooms: number;
+  description: string;
+}
 
 export interface AsramaGallerySectionProps {
   className?: string;
 }
 
 export function AsramaGallerySection({ className = '' }: AsramaGallerySectionProps) {
+  const [dormitories, setDormitories] = useState<Dormitory[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchDormitories() {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('dormitories')
+        .select('*');
+
+      if (error) {
+        console.error('Error fetching dormitories:', error);
+      } else {
+        setDormitories(data || []);
+      }
+      setLoading(false);
+    }
+
+    fetchDormitories();
+  }, []);
+
   return (
     <section className={`relative py-24 px-8 bg-white overflow-hidden ${className}`}>
       {/* Subtle gradient orbs background */}
@@ -38,11 +71,17 @@ export function AsramaGallerySection({ className = '' }: AsramaGallerySectionPro
         </p>
 
         {/* Dorm Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {dormitoryData.map((dorm, index) => (
-            <DormCard key={dorm.id} dormitory={dorm} index={index} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="w-8 h-8 border-4 border-iark-red border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {dormitories.map((dorm, index) => (
+              <DormCard key={dorm.id} dormitory={dorm} index={index} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

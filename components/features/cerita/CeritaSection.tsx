@@ -2,8 +2,10 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { createClient } from '@/lib/supabase/client';
+import type { StoryCategory } from '@/lib/supabase/types';
 
 export interface CeritaSectionProps {
   className?: string;
@@ -16,7 +18,7 @@ interface Story {
   title: string;
   excerpt: string;
   photo: string;
-  category: 'karir' | 'pengabdian' | 'akademik' | 'kepemimpinan';
+  category: StoryCategory;
   featured?: boolean;
   quote?: string;
 }
@@ -29,67 +31,73 @@ const categories = [
   { id: 'kepemimpinan', label: 'Kepemimpinan', color: 'red' },
 ];
 
-const stories: Story[] = [
-  {
-    id: '1',
-    name: 'Dr. Sarah Wijaya',
-    batch: 'RK Angkatan 15',
-    title: 'Dari Rumah Kepemimpinan ke Harvard Medical School',
-    excerpt: 'Perjalanan dari mahasiswa RK hingga menjadi peneliti kesehatan global di salah satu universitas terbaik dunia.',
-    photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80',
-    category: 'akademik',
-    featured: true,
-    quote: 'RK mengajarkan saya bahwa kepemimpinan bukan tentang posisi, tapi tentang memberi dampak positif bagi orang lain.',
-  },
-  {
-    id: '2',
-    name: 'Ahmad Fauzi',
-    batch: 'RK Angkatan 12',
-    title: 'Membangun Startup Edukasi untuk Daerah Terpencil',
-    excerpt: 'Kisah mendirikan platform edukasi online yang telah menjangkau ribuan siswa di pelosok Indonesia.',
-    photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80',
-    category: 'karir',
-  },
-  {
-    id: '3',
-    name: 'Dewi Lestari',
-    batch: 'RK Angkatan 14',
-    title: 'Mengabdi sebagai Guru di Papua Selama 5 Tahun',
-    excerpt: 'Pengalaman menjadi pengajar muda dan membawa perubahan untuk pendidikan anak-anak Papua.',
-    photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&q=80',
-    category: 'pengabdian',
-  },
-  {
-    id: '4',
-    name: 'Budi Santoso',
-    batch: 'RK Angkatan 13',
-    title: 'Dari Aktivis Kampus ke Anggota DPR Termuda',
-    excerpt: 'Perjalanan politik yang dimulai dari kepemimpinan di RK hingga kursi parlemen.',
-    photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80',
-    category: 'kepemimpinan',
-  },
-  {
-    id: '5',
-    name: 'Siti Nurhaliza',
-    batch: 'RK Angkatan 16',
-    title: 'Merintis Bisnis Sosial Fashion Berkelanjutan',
-    excerpt: 'Membangun brand fashion yang memberdayakan pengrajin lokal dan ramah lingkungan.',
-    photo: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&q=80',
-    category: 'karir',
-  },
-  {
-    id: '6',
-    name: 'Rizki Pratama',
-    batch: 'RK Angkatan 11',
-    title: 'Raih Beasiswa S3 di MIT untuk Riset AI',
-    excerpt: 'Kisah sukses mendapatkan beasiswa penuh untuk program doktoral di Massachusetts Institute of Technology.',
-    photo: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&q=80',
-    category: 'akademik',
-  },
-];
-
 export function CeritaSection({ className = '' }: CeritaSectionProps) {
   const [activeCategory, setActiveCategory] = useState('semua');
+  const [stories, setStories] = useState<Story[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchStories() {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('stories')
+        .select(`
+          id,
+          title,
+          excerpt,
+          hero_image,
+          category,
+          featured,
+          published_at,
+          author:profiles!author_id (
+            name,
+            angkatan,
+            photo
+          )
+        `)
+        .eq('status', 'published')
+        .order('published_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching stories:', error);
+        setLoading(false);
+        return;
+      }
+
+      interface StoryResponse {
+        id: string;
+        title: string;
+        excerpt: string | null;
+        hero_image: string | null;
+        category: StoryCategory;
+        featured: boolean;
+        published_at: string | null;
+        author: {
+          name: string;
+          angkatan: number | null;
+          photo: string | null;
+        } | null;
+      }
+
+      const mappedStories: Story[] = ((data || []) as StoryResponse[]).map((story) => {
+        return {
+          id: story.id,
+          name: story.author?.name || 'Anonymous',
+          batch: story.author?.angkatan ? `RK Angkatan ${story.author.angkatan}` : '',
+          title: story.title,
+          excerpt: story.excerpt || '',
+          photo: story.hero_image || story.author?.photo || '/images/placeholder.jpg',
+          category: story.category,
+          featured: story.featured,
+        };
+      });
+
+      setStories(mappedStories);
+      setLoading(false);
+    }
+
+    fetchStories();
+  }, []);
 
   const featuredStory = stories.find((story) => story.featured);
   const regularStories = stories.filter((story) => !story.featured);
@@ -111,6 +119,18 @@ export function CeritaSection({ className = '' }: CeritaSectionProps) {
     if (category === 'kepemimpinan') return 'Kepemimpinan';
     return category;
   };
+
+  if (loading) {
+    return (
+      <section className={`relative py-16 px-8 bg-white overflow-hidden ${className}`}>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-iark-red"></div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className={`relative py-16 px-8 bg-white overflow-hidden ${className}`}>

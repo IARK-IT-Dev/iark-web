@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { AnimatePresence, motion } from 'framer-motion';
 import { BatchTabs } from './BatchTabs';
 import { FunFactCard } from './FunFactCard';
 import { LeaderProfileCard } from './LeaderProfileCard';
-import { batchData } from '@/lib/data/batchData';
-import { testimonialData } from '@/lib/data/testimonialData';
+import { createClient } from '@/lib/supabase/client';
+import type { Batch, BatchLeader, Testimonial } from '@/lib/supabase/types';
 
 export interface BatchStoriesSectionProps {
   className?: string;
@@ -15,19 +15,71 @@ export interface BatchStoriesSectionProps {
 
 type MainTabType = 'angkatan' | 'tokoh';
 
+interface BatchWithLeader extends Batch {
+  batch_leaders: BatchLeader[];
+}
+
 export function BatchStoriesSection({ className = '' }: BatchStoriesSectionProps) {
   const [mainTab, setMainTab] = useState<MainTabType>('angkatan');
   const [activeAngkatan, setActiveAngkatan] = useState(1);
+  const [batches, setBatches] = useState<BatchWithLeader[]>([]);
+  const [tokohTernama, setTokohTernama] = useState<Testimonial[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const currentBatch = batchData.find((b) => b.angkatan === activeAngkatan) || batchData[0];
+  useEffect(() => {
+    async function fetchData() {
+      const supabase = createClient();
 
-  // Get tokoh ternama from testimonial data
-  const tokohTernama = testimonialData.filter((t) => t.type === 'tokoh_ternama');
+      const [batchesRes, tokohRes] = await Promise.all([
+        supabase
+          .from('batches')
+          .select('*, batch_leaders(*)')
+          .order('angkatan', { ascending: true }),
+        supabase
+          .from('testimonials')
+          .select('*')
+          .eq('type', 'tokoh_ternama')
+          .eq('is_active', true)
+          .order('order_index', { ascending: true }),
+      ]);
+
+      if (batchesRes.data) {
+        setBatches(batchesRes.data as BatchWithLeader[]);
+      }
+      if (tokohRes.data) {
+        setTokohTernama(tokohRes.data);
+      }
+
+      setLoading(false);
+    }
+
+    fetchData();
+  }, []);
+
+  const currentBatch = batches.find((b) => b.angkatan === activeAngkatan) || batches[0];
+  const currentLeader = currentBatch?.batch_leaders?.find((l) => l.is_ketua) || currentBatch?.batch_leaders?.[0];
 
   const mainTabs: { label: string; value: MainTabType }[] = [
     { label: 'Angkatan', value: 'angkatan' },
     { label: 'Tokoh', value: 'tokoh' },
   ];
+
+  if (loading) {
+    return (
+      <section className={`relative py-24 px-8 bg-white overflow-hidden ${className}`}>
+        <div className="max-w-6xl mx-auto text-center">
+          <div className="animate-pulse">
+            <div className="h-12 bg-gray-200 rounded w-64 mx-auto mb-6" />
+            <div className="h-6 bg-gray-200 rounded w-96 mx-auto mb-12" />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="h-64 bg-gray-200 rounded-2xl" />
+              <div className="h-64 bg-gray-200 rounded-2xl" />
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className={`relative py-24 px-8 bg-white overflow-hidden ${className}`}>
@@ -90,31 +142,46 @@ export function BatchStoriesSection({ className = '' }: BatchStoriesSectionProps
                 <BatchTabs
                   activeAngkatan={activeAngkatan}
                   onSelect={setActiveAngkatan}
-                  totalAngkatan={batchData.length}
+                  totalAngkatan={batches.length}
                 />
               </div>
 
               {/* Angkatan Content */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeAngkatan}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                  className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-                >
-                  <FunFactCard
-                    funFact={currentBatch.funFact}
-                    angkatan={currentBatch.angkatan}
-                    year={currentBatch.year}
-                  />
-                  <LeaderProfileCard
-                    leader={currentBatch.leader}
-                    angkatan={currentBatch.angkatan}
-                  />
-                </motion.div>
-              </AnimatePresence>
+              {currentBatch && (
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeAngkatan}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+                  >
+                    <FunFactCard
+                      funFact={currentBatch.fun_fact || ''}
+                      angkatan={currentBatch.angkatan}
+                      year={currentBatch.year}
+                    />
+                    {currentLeader && (
+                      <LeaderProfileCard
+                        leader={{
+                          name: currentLeader.name,
+                          photo: currentLeader.photo || '',
+                          quote: currentLeader.quote || '',
+                          job_title: currentLeader.job_title || '',
+                        }}
+                        angkatan={currentBatch.angkatan}
+                      />
+                    )}
+                  </motion.div>
+                </AnimatePresence>
+              )}
+
+              {batches.length === 0 && (
+                <div className="text-center py-16">
+                  <p className="text-gray-500 text-lg">Belum ada data angkatan.</p>
+                </div>
+              )}
             </motion.div>
           ) : (
             <motion.div
@@ -137,7 +204,7 @@ export function BatchStoriesSection({ className = '' }: BatchStoriesSectionProps
                     {/* Photo */}
                     <div className="relative h-48 overflow-hidden">
                       <Image
-                        src={tokoh.photo}
+                        src={tokoh.photo || '/placeholder-avatar.jpg'}
                         alt={tokoh.name}
                         fill
                         className="object-cover"

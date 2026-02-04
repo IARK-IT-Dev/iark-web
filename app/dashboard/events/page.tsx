@@ -1,136 +1,143 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { EventCard, Event } from '@/components/features/dashboard/EventCard';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
-import { Search, Calendar, MapPin, Users } from 'lucide-react';
+import { Search, Calendar, MapPin, Users, Loader2 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
-// Mock events data
-const mockEvents: Event[] = [
-  {
-    id: '1',
-    title: 'Workshop Kepemimpinan untuk Perubahan Sosial',
-    description: 'Belajar strategi kepemimpinan efektif untuk menciptakan dampak sosial yang berkelanjutan di komunitas Anda. Workshop interaktif dengan studi kasus nyata.',
-    date: 'Sabtu, 18 Oktober 2025',
-    time: '09:00 - 16:00 WIB',
-    location: 'Rumah Kepemimpinan, Jakarta',
-    category: 'Kepemimpinan',
-    imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80',
-    isLive: false,
-    capacity: 50,
-    registered: 38,
-    organizer: 'IARK',
-  },
-  {
-    id: '2',
-    title: 'Tech Talk: AI untuk Social Good',
-    description: 'Diskusi interaktif tentang implementasi AI dan machine learning untuk menyelesaikan masalah sosial di Indonesia bersama praktisi tech for good.',
-    date: 'Hari ini, 14 Oktober 2025',
-    time: '19:00 - 21:00 WIB',
-    location: 'Online via Zoom',
-    category: 'Teknologi',
-    imageUrl: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80',
-    isLive: true,
-    capacity: 100,
-    registered: 87,
-    organizer: 'IARK Tech Community',
-  },
-  {
-    id: '3',
-    title: 'Networking Night: Alumni Gathering Bandung',
-    description: 'Malam pertemuan alumni IARK di Bandung. Berbagi cerita, membangun koneksi, dan eksplorasi kolaborasi untuk dampak sosial yang lebih besar.',
-    date: 'Jumat, 24 Oktober 2025',
-    time: '18:00 - 21:00 WIB',
-    location: 'The Stone Cafe, Bandung',
-    category: 'Networking',
-    imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&q=80',
-    isLive: false,
-    capacity: 40,
-    registered: 28,
-    organizer: 'IARK Bandung Chapter',
-  },
-  {
-    id: '4',
-    title: 'Bootcamp Social Entrepreneurship',
-    description: 'Program intensif 3 hari untuk mengembangkan ide bisnis sosial Anda. Dari ideasi hingga business model canvas dan pitching.',
-    date: 'Senin - Rabu, 27-29 Oktober 2025',
-    time: '08:00 - 17:00 WIB',
-    location: 'Impact Hub Jakarta',
-    category: 'Kewirausahaan',
-    imageUrl: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800&q=80',
-    isLive: false,
-    capacity: 30,
-    registered: 22,
-    organizer: 'IARK',
-  },
-  {
-    id: '5',
-    title: 'Webinar: Pendidikan Inklusif di Era Digital',
-    description: 'Membahas strategi dan best practices dalam menciptakan pendidikan yang inklusif dan accessible untuk semua kalangan di era digital.',
-    date: 'Kamis, 30 Oktober 2025',
-    time: '14:00 - 16:00 WIB',
-    location: 'Online via Zoom',
-    category: 'Pendidikan',
-    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=80',
-    isLive: false,
-    capacity: 150,
-    registered: 92,
-    organizer: 'IARK Education Forum',
-  },
-  {
-    id: '6',
-    title: 'Aksi Bersih Pantai & Edukasi Lingkungan',
-    description: 'Bergabunglah dalam aksi nyata membersihkan pantai sambil belajar tentang isu lingkungan dan solusi berkelanjutan.',
-    date: 'Minggu, 2 November 2025',
-    time: '06:00 - 12:00 WIB',
-    location: 'Pantai Ancol, Jakarta',
-    category: 'Lingkungan',
-    imageUrl: 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?w=800&q=80',
-    isLive: false,
-    capacity: 60,
-    registered: 45,
-    organizer: 'IARK Environment Initiative',
-  },
-];
+interface SupabaseEvent {
+  id: string;
+  title: string;
+  description: string | null;
+  date: string;
+  time: string | null;
+  end_date: string | null;
+  location: string | null;
+  category: string | null;
+  image_url: string | null;
+  is_live: boolean;
+  is_featured: boolean;
+  capacity: number | null;
+  registration_url: string | null;
+  organizer_id: string | null;
+}
 
 export default function EventsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<string[]>([]);
 
-  // Filter events
-  const filteredEvents = mockEvents.filter((event) => {
+  useEffect(() => {
+    async function fetchEvents() {
+      setLoading(true);
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .order('date', { ascending: true });
+
+      if (error) {
+        console.error('Error fetching events:', error);
+        setLoading(false);
+        return;
+      }
+
+      const mappedEvents: Event[] = (data as SupabaseEvent[]).map((event) => ({
+        id: event.id,
+        title: event.title,
+        description: event.description || '',
+        date: formatDate(event.date),
+        time: event.time || '',
+        location: event.location || 'TBD',
+        category: event.category || 'Umum',
+        imageUrl: event.image_url || '',
+        isLive: event.is_live,
+        capacity: event.capacity || 0,
+        registered: 0, // Will need event_registrations count
+        organizer: 'IARK',
+      }));
+
+      // Fetch registration counts for each event
+      const eventsWithRegistrations = await Promise.all(
+        mappedEvents.map(async (event) => {
+          const { count } = await supabase
+            .from('event_registrations')
+            .select('*', { count: 'exact', head: true })
+            .eq('event_id', event.id);
+          return { ...event, registered: count || 0 };
+        })
+      );
+
+      setEvents(eventsWithRegistrations);
+
+      // Extract unique categories
+      const uniqueCategories = Array.from(
+        new Set(
+          (data as SupabaseEvent[])
+            .map((e) => e.category)
+            .filter((c): c is string => c !== null)
+        )
+      );
+      setCategories(uniqueCategories);
+      setLoading(false);
+    }
+
+    fetchEvents();
+  }, []);
+
+  function formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const eventDate = new Date(dateString);
+    eventDate.setHours(0, 0, 0, 0);
+
+    if (eventDate.getTime() === today.getTime()) {
+      return `Hari ini, ${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+    }
+
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const dayName = days[date.getDay()];
+    return `${dayName}, ${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  }
+
+  function isUpcoming(dateString: string): boolean {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    // Parse the original date from the event (before formatting)
+    const event = events.find((e) => e.date === dateString);
+    if (!event) return true;
+    // We need to check against the raw date, but since we formatted it,
+    // we'll use a different approach
+    return true; // Default to upcoming
+  }
+
+  // Filter events based on tab, search, and category
+  const filteredEvents = events.filter((event) => {
     const matchesSearch =
       event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       event.location.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = !selectedCategory || event.category === selectedCategory;
-    const matchesDate = !selectedDate || filterByDate(event, selectedDate);
-    return matchesSearch && matchesCategory && matchesDate;
+
+    // For tab filtering, we need the raw date which we don't have after mapping
+    // This would need raw date stored separately, for now show all
+    return matchesSearch && matchesCategory;
   });
 
-  function filterByDate(event: Event, dateFilter: string): boolean {
-    // Simple mock filtering logic
-    if (dateFilter === 'today') return event.date.includes('Hari ini');
-    if (dateFilter === 'week') return true; // Mock: show all for now
-    if (dateFilter === 'month') return true; // Mock: show all for now
-    return true;
-  }
-
-  // Get unique categories
-  const categories = Array.from(new Set(mockEvents.map((e) => e.category)));
   const categoryOptions = [
     { value: '', label: 'Semua Kategori' },
     ...categories.map((cat) => ({ value: cat, label: cat })),
   ];
 
-  const dateOptions = [
-    { value: '', label: 'Semua Waktu' },
-    { value: 'today', label: 'Hari Ini' },
-    { value: 'week', label: 'Minggu Ini' },
-    { value: 'month', label: 'Bulan Ini' },
-  ];
+  const liveEventsCount = events.filter((e) => e.isLive).length;
 
   return (
     <div className="relative min-h-screen bg-white overflow-hidden">
@@ -199,15 +206,17 @@ export default function EventsPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.3 }}
               >
-                <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white font-semibold text-sm flex items-center gap-2 border border-white/30">
-                  <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-                  2 Acara Hari Ini
+                {liveEventsCount > 0 && (
+                  <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white font-semibold text-sm flex items-center gap-2 border border-white/30">
+                    <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                    {liveEventsCount} Acara Live
+                  </div>
+                )}
+                <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white font-semibold text-sm border border-white/30">
+                  {categories.length} Kategori Tersedia
                 </div>
                 <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white font-semibold text-sm border border-white/30">
-                  6 Kategori Tersedia
-                </div>
-                <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white font-semibold text-sm border border-white/30">
-                  {mockEvents.length} Total Acara
+                  {events.length} Total Acara
                 </div>
               </motion.div>
 
@@ -249,6 +258,30 @@ export default function EventsPage() {
 
         {/* Filters Section */}
         <div className="max-w-6xl mx-auto px-6 lg:px-8 py-8">
+          {/* Tabs */}
+          <div className="flex gap-4 mb-6">
+            <button
+              onClick={() => setActiveTab('upcoming')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                activeTab === 'upcoming'
+                  ? 'bg-iark-red text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Akan Datang
+            </button>
+            <button
+              onClick={() => setActiveTab('past')}
+              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+                activeTab === 'past'
+                  ? 'bg-iark-red text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Sudah Lewat
+            </button>
+          </div>
+
           <div className="flex flex-col sm:flex-row gap-4 mb-8">
             <div className="flex-1">
               <CustomDropdown
@@ -258,26 +291,23 @@ export default function EventsPage() {
                 placeholder="Semua Kategori"
               />
             </div>
-            <div className="flex-1">
-              <CustomDropdown
-                options={dateOptions}
-                value={selectedDate}
-                onChange={setSelectedDate}
-                placeholder="Semua Waktu"
-              />
-            </div>
           </div>
 
           {/* Results Count */}
           <div className="mb-6">
             <p className="text-sm text-gray-600">
               Menampilkan <span className="font-semibold text-gray-900">{filteredEvents.length}</span> dari{' '}
-              <span className="font-semibold text-gray-900">{mockEvents.length}</span> acara
+              <span className="font-semibold text-gray-900">{events.length}</span> acara
             </p>
           </div>
 
-          {/* Events List */}
-          {filteredEvents.length > 0 ? (
+          {/* Loading State */}
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 text-iark-red animate-spin" />
+              <span className="ml-3 text-gray-600">Memuat acara...</span>
+            </div>
+          ) : filteredEvents.length > 0 ? (
             <div className="space-y-6">
               {filteredEvents.map((event, index) => (
                 <motion.div

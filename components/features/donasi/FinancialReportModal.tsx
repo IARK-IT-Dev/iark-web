@@ -153,7 +153,8 @@ export function FinancialReportModal({ isOpen, onClose }: FinancialReportModalPr
                       <XAxis dataKey="month" stroke="#6B7280" />
                       <YAxis stroke="#6B7280" tickFormatter={formatRupiah} />
                       <Tooltip
-                        formatter={(value: number) => formatRupiah(value)}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        formatter={(value: any) => formatRupiah(value)}
                         contentStyle={{
                           backgroundColor: 'white',
                           border: '1px solid #E5E7EB',
@@ -184,7 +185,8 @@ export function FinancialReportModal({ isOpen, onClose }: FinancialReportModalPr
                       <XAxis dataKey="month" stroke="#6B7280" />
                       <YAxis stroke="#6B7280" tickFormatter={formatRupiah} />
                       <Tooltip
-                        formatter={(value: number) => formatRupiah(value)}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        formatter={(value: any) => formatRupiah(value)}
                         contentStyle={{
                           backgroundColor: 'white',
                           border: '1px solid #E5E7EB',
@@ -218,7 +220,8 @@ export function FinancialReportModal({ isOpen, onClose }: FinancialReportModalPr
                           cx="50%"
                           cy="50%"
                           labelLine={false}
-                          label={({ name, percentage }) => `${name} (${percentage}%)`}
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          label={({ name, percentage }: any) => `${name} (${percentage}%)`}
                           outerRadius={100}
                           fill="#8884d8"
                           dataKey="value"
@@ -227,7 +230,8 @@ export function FinancialReportModal({ isOpen, onClose }: FinancialReportModalPr
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
-                        <Tooltip formatter={(value: number) => formatRupiah(value)} />
+                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                        <Tooltip formatter={(value: any) => formatRupiah(value)} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -268,7 +272,8 @@ export function FinancialReportModal({ isOpen, onClose }: FinancialReportModalPr
                       <XAxis dataKey="quarter" stroke="#6B7280" />
                       <YAxis stroke="#6B7280" tickFormatter={formatRupiah} />
                       <Tooltip
-                        formatter={(value: number) => formatRupiah(value)}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        formatter={(value: any) => formatRupiah(value)}
                         contentStyle={{
                           backgroundColor: 'white',
                           border: '1px solid #E5E7EB',

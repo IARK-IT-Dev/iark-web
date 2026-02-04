@@ -1,169 +1,116 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Event } from '@/components/features/dashboard/EventCard';
-import { ArrowLeft, Calendar, Clock, MapPin, Users, Share2, Bookmark, Info, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Calendar, Clock, MapPin, Users, Share2, Bookmark, Info, Loader2 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
-// Mock events data (same as events page)
-const mockEvents: Event[] = [
-  {
-    id: '1',
-    title: 'Workshop Kepemimpinan untuk Perubahan Sosial',
-    description: 'Belajar strategi kepemimpinan efektif untuk menciptakan dampak sosial yang berkelanjutan di komunitas Anda. Workshop interaktif dengan studi kasus nyata.',
-    date: 'Sabtu, 18 Oktober 2025',
-    time: '09:00 - 16:00 WIB',
-    location: 'Rumah Kepemimpinan, Jakarta',
-    category: 'Kepemimpinan',
-    imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80',
-    isLive: false,
-    capacity: 50,
-    registered: 38,
-    organizer: 'IARK',
-  },
-  {
-    id: '2',
-    title: 'Tech Talk: AI untuk Social Good',
-    description: 'Diskusi interaktif tentang implementasi AI dan machine learning untuk menyelesaikan masalah sosial di Indonesia bersama praktisi tech for good.',
-    date: 'Hari ini, 14 Oktober 2025',
-    time: '19:00 - 21:00 WIB',
-    location: 'Online via Zoom',
-    category: 'Teknologi',
-    imageUrl: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80',
-    isLive: true,
-    capacity: 100,
-    registered: 87,
-    organizer: 'IARK Tech Community',
-  },
-  {
-    id: '3',
-    title: 'Networking Night: Alumni Gathering Bandung',
-    description: 'Malam pertemuan alumni IARK di Bandung. Berbagi cerita, membangun koneksi, dan eksplorasi kolaborasi untuk dampak sosial yang lebih besar.',
-    date: 'Jumat, 24 Oktober 2025',
-    time: '18:00 - 21:00 WIB',
-    location: 'The Stone Cafe, Bandung',
-    category: 'Networking',
-    imageUrl: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=800&q=80',
-    isLive: false,
-    capacity: 40,
-    registered: 28,
-    organizer: 'IARK Bandung Chapter',
-  },
-  {
-    id: '4',
-    title: 'Bootcamp Social Entrepreneurship',
-    description: 'Program intensif 3 hari untuk mengembangkan ide bisnis sosial Anda. Dari ideasi hingga business model canvas dan pitching.',
-    date: 'Senin - Rabu, 27-29 Oktober 2025',
-    time: '08:00 - 17:00 WIB',
-    location: 'Impact Hub Jakarta',
-    category: 'Kewirausahaan',
-    imageUrl: 'https://images.unsplash.com/photo-1559136555-9303baea8ebd?w=800&q=80',
-    isLive: false,
-    capacity: 30,
-    registered: 22,
-    organizer: 'IARK',
-  },
-  {
-    id: '5',
-    title: 'Webinar: Pendidikan Inklusif di Era Digital',
-    description: 'Membahas strategi dan best practices dalam menciptakan pendidikan yang inklusif dan accessible untuk semua kalangan di era digital.',
-    date: 'Kamis, 30 Oktober 2025',
-    time: '14:00 - 16:00 WIB',
-    location: 'Online via Zoom',
-    category: 'Pendidikan',
-    imageUrl: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=80',
-    isLive: false,
-    capacity: 150,
-    registered: 92,
-    organizer: 'IARK Education Forum',
-  },
-  {
-    id: '6',
-    title: 'Aksi Bersih Pantai & Edukasi Lingkungan',
-    description: 'Bergabunglah dalam aksi nyata membersihkan pantai sambil belajar tentang isu lingkungan dan solusi berkelanjutan.',
-    date: 'Minggu, 2 November 2025',
-    time: '06:00 - 12:00 WIB',
-    location: 'Pantai Ancol, Jakarta',
-    category: 'Lingkungan',
-    imageUrl: 'https://images.unsplash.com/photo-1618477461853-cf6ed80faba5?w=800&q=80',
-    isLive: false,
-    capacity: 60,
-    registered: 45,
-    organizer: 'IARK Environment Initiative',
-  },
-];
-
-// Extended event details (in real app, this would come from API)
-const extendedEventDetails: Record<string, {
-  fullDescription: string;
-  agenda: Array<{ time: string; activity: string }>;
-  speakers: Array<{ name: string; role: string; avatar: string }>;
-  requirements: string[];
-  benefits: string[];
-}> = {
-  '1': {
-    fullDescription: 'Workshop ini dirancang khusus untuk para pemimpin muda yang ingin menciptakan perubahan positif di komunitas mereka. Melalui sesi interaktif, studi kasus, dan diskusi kelompok, peserta akan mempelajari berbagai strategi kepemimpinan yang efektif dan bagaimana menerapkannya dalam konteks sosial.',
-    agenda: [
-      { time: '09:00 - 09:30', activity: 'Registrasi & Welcome Coffee' },
-      { time: '09:30 - 11:00', activity: 'Sesi 1: Foundations of Social Leadership' },
-      { time: '11:00 - 11:15', activity: 'Coffee Break' },
-      { time: '11:15 - 13:00', activity: 'Sesi 2: Case Study Analysis' },
-      { time: '13:00 - 14:00', activity: 'Lunch Break' },
-      { time: '14:00 - 15:30', activity: 'Sesi 3: Workshop & Group Discussion' },
-      { time: '15:30 - 16:00', activity: 'Q&A dan Closing' },
-    ],
-    speakers: [
-      { name: 'Dr. Sarah Wijaya', role: 'Social Innovation Expert', avatar: 'https://ui-avatars.com/api/?name=Sarah+Wijaya&background=E21C24&color=fff' },
-      { name: 'Ahmad Fauzi', role: 'Community Leader', avatar: 'https://ui-avatars.com/api/?name=Ahmad+Fauzi&background=1E40AF&color=fff' },
-    ],
-    requirements: [
-      'Laptop untuk workshop session',
-      'Komitmen hadir full day',
-      'Pengalaman di organisasi/komunitas (diutamakan)',
-    ],
-    benefits: [
-      'Sertifikat partisipasi',
-      'Modul workshop digital',
-      'Akses ke komunitas alumni',
-      'Lunch & coffee break',
-      'Networking opportunity',
-    ],
-  },
-  '2': {
-    fullDescription: 'Diskusi mendalam tentang bagaimana teknologi AI dan machine learning dapat digunakan untuk menyelesaikan berbagai masalah sosial di Indonesia. Belajar dari praktisi yang telah mengimplementasikan solusi tech for good di lapangan.',
-    agenda: [
-      { time: '19:00 - 19:15', activity: 'Opening & Introduction' },
-      { time: '19:15 - 19:45', activity: 'Keynote: AI for Social Impact' },
-      { time: '19:45 - 20:30', activity: 'Panel Discussion & Case Studies' },
-      { time: '20:30 - 21:00', activity: 'Q&A Session' },
-    ],
-    speakers: [
-      { name: 'Budi Santoso', role: 'Senior Software Engineer, Tech for Good Indonesia', avatar: 'https://ui-avatars.com/api/?name=Budi+Santoso&background=E21C24&color=fff' },
-      { name: 'Dr. Lisa Tanjung', role: 'AI Researcher', avatar: 'https://ui-avatars.com/api/?name=Lisa+Tanjung&background=059669&color=fff' },
-    ],
-    requirements: [
-      'Koneksi internet stabil',
-      'Zoom installed di device',
-      'Basic understanding of AI (optional)',
-    ],
-    benefits: [
-      'E-certificate',
-      'Recording session',
-      'Slide deck presentation',
-      'Access to AI resources library',
-    ],
-  },
-};
+interface SupabaseEvent {
+  id: string;
+  title: string;
+  slug: string;
+  description: string | null;
+  content: string | null;
+  date: string;
+  time: string | null;
+  end_date: string | null;
+  location: string | null;
+  category: string | null;
+  image_url: string | null;
+  is_live: boolean;
+  is_featured: boolean;
+  capacity: number | null;
+  organizer_id: string | null;
+  registration_url: string | null;
+}
 
 export default function EventDetailPage() {
   const params = useParams();
   const router = useRouter();
   const eventId = params.id as string;
 
-  // Find event by ID
-  const event = mockEvents.find((e) => e.id === eventId);
-  const details = extendedEventDetails[eventId];
+  const [event, setEvent] = useState<Event | null>(null);
+  const [content, setContent] = useState<string | null>(null);
+  const [registrationUrl, setRegistrationUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchEvent() {
+      setLoading(true);
+      const supabase = createClient();
+
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .eq('id', eventId)
+        .single();
+
+      if (error || !data) {
+        console.error('Error fetching event:', error);
+        setLoading(false);
+        return;
+      }
+
+      const eventData = data as SupabaseEvent;
+
+      // Fetch registration count
+      const { count } = await supabase
+        .from('event_registrations')
+        .select('*', { count: 'exact', head: true })
+        .eq('event_id', eventId);
+
+      const mappedEvent: Event = {
+        id: eventData.id,
+        title: eventData.title,
+        description: eventData.description || '',
+        date: formatDate(eventData.date),
+        time: eventData.time || '',
+        location: eventData.location || 'TBD',
+        category: eventData.category || 'Umum',
+        imageUrl: eventData.image_url || '',
+        isLive: eventData.is_live,
+        capacity: eventData.capacity || 0,
+        registered: count || 0,
+        organizer: 'IARK',
+      };
+
+      setEvent(mappedEvent);
+      setContent(eventData.content);
+      setRegistrationUrl(eventData.registration_url);
+      setLoading(false);
+    }
+
+    fetchEvent();
+  }, [eventId]);
+
+  function formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const eventDate = new Date(dateString);
+    eventDate.setHours(0, 0, 0, 0);
+
+    if (eventDate.getTime() === today.getTime()) {
+      return `Hari ini, ${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+    }
+
+    const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    const dayName = days[date.getDay()];
+    return `${dayName}, ${date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-8 h-8 text-iark-red animate-spin" />
+        <span className="ml-3 text-gray-600">Memuat event...</span>
+      </div>
+    );
+  }
 
   if (!event) {
     return (
@@ -183,7 +130,7 @@ export default function EventDetailPage() {
   }
 
   const spotsLeft = event.capacity - event.registered;
-  const isAlmostFull = spotsLeft <= 10;
+  const isAlmostFull = spotsLeft <= 10 && spotsLeft > 0;
 
   return (
     <div className="relative min-h-screen bg-white overflow-hidden">
@@ -293,7 +240,7 @@ export default function EventDetailPage() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Waktu</p>
-                    <p className="font-semibold text-gray-900">{event.time}</p>
+                    <p className="font-semibold text-gray-900">{event.time || '-'}</p>
                   </div>
                 </div>
 
@@ -314,7 +261,7 @@ export default function EventDetailPage() {
                   <div>
                     <p className="text-sm text-gray-600">Kapasitas</p>
                     <p className="font-semibold text-gray-900">
-                      {event.registered} / {event.capacity} terdaftar
+                      {event.capacity > 0 ? `${event.registered} / ${event.capacity} terdaftar` : 'Tidak terbatas'}
                     </p>
                   </div>
                 </div>
@@ -324,101 +271,14 @@ export default function EventDetailPage() {
               <div className="border-t border-gray-200 pt-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-3">Tentang Event</h2>
                 <p className="text-gray-700 leading-relaxed mb-4">{event.description}</p>
-                {details?.fullDescription && (
-                  <p className="text-gray-700 leading-relaxed">{details.fullDescription}</p>
+                {content && (
+                  <div 
+                    className="text-gray-700 leading-relaxed prose max-w-none"
+                    dangerouslySetInnerHTML={{ __html: content }}
+                  />
                 )}
               </div>
             </motion.div>
-
-            {/* Agenda */}
-            {details?.agenda && (
-              <motion.div
-                className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-              >
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Agenda</h2>
-                <div className="space-y-3">
-                  {details.agenda.map((item, index: number) => (
-                    <div key={index} className="flex gap-4 p-3 bg-gray-50 rounded-lg">
-                      <div className="flex-shrink-0 font-semibold text-iark-red text-sm">
-                        {item.time}
-                      </div>
-                      <div className="flex-1 text-gray-700 text-sm">
-                        {item.activity}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {/* Speakers */}
-            {details?.speakers && (
-              <motion.div
-                className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-              >
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Pembicara</h2>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {details.speakers.map((speaker, index: number) => (
-                    <div key={index} className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                      <div className="relative w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
-                        <Image src={speaker.avatar} alt={speaker.name} fill className="object-cover" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-gray-900">{speaker.name}</h3>
-                        <p className="text-sm text-gray-600">{speaker.role}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {/* Requirements & Benefits */}
-            <div className="grid md:grid-cols-2 gap-6">
-              {details?.requirements && (
-                <motion.div
-                  className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.4 }}
-                >
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Persyaratan</h2>
-                  <ul className="space-y-2">
-                    {details.requirements.map((req: string, index: number) => (
-                      <li key={index} className="flex items-start gap-2 text-gray-700 text-sm">
-                        <CheckCircle size={18} className="text-iark-red flex-shrink-0 mt-0.5" />
-                        <span>{req}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </motion.div>
-              )}
-
-              {details?.benefits && (
-                <motion.div
-                  className="bg-gradient-to-br from-iark-red/5 to-iark-blue/5 rounded-2xl shadow-lg p-8 border border-gray-200"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.5 }}
-                >
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Yang Anda Dapatkan</h2>
-                  <ul className="space-y-2">
-                    {details.benefits.map((benefit: string, index: number) => (
-                      <li key={index} className="flex items-start gap-2 text-gray-700 text-sm">
-                        <CheckCircle size={18} className="text-iark-red flex-shrink-0 mt-0.5" />
-                        <span>{benefit}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </motion.div>
-              )}
-            </div>
           </div>
 
           {/* Sidebar - Right Column */}
@@ -435,33 +295,40 @@ export default function EventDetailPage() {
                   <div className="flex items-baseline gap-2 mb-2">
                     <span className="text-3xl font-bold text-gray-900">Gratis</span>
                   </div>
-                  <p className="text-sm text-gray-600">
-                    {spotsLeft} slot tersisa
-                    {isAlmostFull && (
-                      <span className="text-iark-red font-semibold"> • Segera habis!</span>
-                    )}
-                  </p>
+                  {event.capacity > 0 && (
+                    <p className="text-sm text-gray-600">
+                      {spotsLeft} slot tersisa
+                      {isAlmostFull && (
+                        <span className="text-iark-red font-semibold"> • Segera habis!</span>
+                      )}
+                    </p>
+                  )}
                 </div>
 
                 {/* Progress Bar */}
-                <div className="mb-6">
-                  <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
-                    <motion.div
-                      className="bg-iark-red h-full"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(event.registered / event.capacity) * 100}%` }}
-                      transition={{ duration: 1, delay: 0.5 }}
-                    />
+                {event.capacity > 0 && (
+                  <div className="mb-6">
+                    <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                      <motion.div
+                        className="bg-iark-red h-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(event.registered / event.capacity) * 100}%` }}
+                        transition={{ duration: 1, delay: 0.5 }}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
 
-                <motion.button
-                  className="w-full py-4 bg-iark-red text-white rounded-xl font-bold text-lg hover:bg-red-700 transition-colors shadow-lg"
+                <motion.a
+                  href={registrationUrl || '#'}
+                  target={registrationUrl ? '_blank' : undefined}
+                  rel={registrationUrl ? 'noopener noreferrer' : undefined}
+                  className="block w-full py-4 bg-iark-red text-white rounded-xl font-bold text-lg hover:bg-red-700 transition-colors shadow-lg text-center"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   Daftar Sekarang
-                </motion.button>
+                </motion.a>
 
                 <p className="text-xs text-gray-500 text-center mt-4">
                   Dengan mendaftar, Anda setuju dengan syarat dan ketentuan IARK

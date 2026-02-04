@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Clock, Heart, MessageCircle } from 'lucide-react';
-import type { Activity } from '@/lib/data/activitiesData';
+import type { Activity } from './PastActivitiesSection';
 
 export interface ActivityCardProps {
   activity: Activity;
@@ -47,7 +47,7 @@ export function ActivityCard({ activity, index = 0 }: ActivityCardProps) {
                 <span>{activity.date}</span>
                 <span className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
-                  {activity.readTime}
+                  {activity.read_time}
                 </span>
                 <span className="flex items-center gap-1">
                   <Heart className="w-4 h-4" />
@@ -63,7 +63,7 @@ export function ActivityCard({ activity, index = 0 }: ActivityCardProps) {
             {/* Image */}
             <div className="relative w-full md:w-48 lg:w-56 h-48 md:h-auto flex-shrink-0 order-first md:order-last">
               <Image
-                src={activity.imageUrl}
+                src={activity.image_url}
                 alt={activity.title}
                 fill
                 className="object-cover group-hover:scale-105 transition-transform duration-500"

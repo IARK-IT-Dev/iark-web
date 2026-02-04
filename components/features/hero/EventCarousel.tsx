@@ -4,22 +4,50 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { heroSlides, EventSlide } from '@/lib/data/heroSlides';
+import { createClient } from '@/lib/supabase/client';
+
+interface HeroSlide {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  image_url: string;
+  link_url: string | null;
+  order_index: number;
+  is_active: boolean;
+}
 
 export interface EventCarouselProps {
   className?: string;
   autoPlayInterval?: number;
-  slides?: EventSlide[];
 }
 
 export function EventCarousel({
   className = '',
   autoPlayInterval = 5000,
-  slides = heroSlides,
 }: EventCarouselProps) {
+  const [slides, setSlides] = useState<HeroSlide[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+
+  useEffect(() => {
+    async function fetchSlides() {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('hero_slides')
+        .select('*')
+        .eq('is_active', true)
+        .order('order_index', { ascending: true });
+
+      if (!error && data) {
+        setSlides(data);
+      }
+      setIsLoading(false);
+    }
+
+    fetchSlides();
+  }, []);
 
   const maxSlides = Math.min(slides.length, 5);
   const displaySlides = slides.slice(0, maxSlides);
@@ -84,6 +112,18 @@ export function EventCarousel({
     return Math.abs(offset) * velocity;
   };
 
+  if (isLoading) {
+    return (
+      <div className={`relative w-full max-w-6xl mx-auto ${className}`}>
+        <div className="relative aspect-[21/9] rounded-2xl overflow-hidden shadow-2xl bg-gray-100 animate-pulse" />
+      </div>
+    );
+  }
+
+  if (displaySlides.length === 0) {
+    return null;
+  }
+
   return (
     <div
       className={`relative w-full max-w-6xl mx-auto ${className}`}
@@ -120,7 +160,7 @@ export function EventCarousel({
           >
             {/* Image */}
             <Image
-              src={displaySlides[currentIndex].imageUrl}
+              src={displaySlides[currentIndex].image_url}
               alt={displaySlides[currentIndex].title}
               fill
               className="object-cover"

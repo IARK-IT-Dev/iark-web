@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { MapPin, Users } from 'lucide-react';
-import type { Dormitory } from '@/lib/data/dormitoryData';
+import type { Dormitory } from './AsramaGallerySection';
 
 export interface DormCardProps {
   dormitory: Dormitory;
@@ -11,7 +11,7 @@ export interface DormCardProps {
 }
 
 export function DormCard({ dormitory, index = 0 }: DormCardProps) {
-  const occupancyPercentage = Math.round((dormitory.occupiedRooms / dormitory.totalRooms) * 100);
+  const occupancyPercentage = Math.round((dormitory.occupied_rooms / dormitory.total_rooms) * 100);
 
   return (
     <motion.div
@@ -24,7 +24,7 @@ export function DormCard({ dormitory, index = 0 }: DormCardProps) {
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
         <Image
-          src={dormitory.imageUrl}
+          src={dormitory.image_url}
           alt={dormitory.name}
           fill
           className="object-cover group-hover:scale-110 transition-transform duration-500"
@@ -60,7 +60,7 @@ export function DormCard({ dormitory, index = 0 }: DormCardProps) {
               <span>Hunian</span>
             </div>
             <span className="text-sm font-medium text-gray-900">
-              {dormitory.occupiedRooms}/{dormitory.totalRooms} kamar
+              {dormitory.occupied_rooms}/{dormitory.total_rooms} kamar
             </span>
           </div>
 
