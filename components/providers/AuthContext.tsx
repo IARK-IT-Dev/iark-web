@@ -46,19 +46,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Fetch profile data
   const fetchProfile = async (userId: string): Promise<Profile | null> => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    if (error) {
-      console.error('Error fetching profile:', error);
+      if (error) {
+        // Only log non-abort errors
+        const isAbort = error.message?.includes('AbortError') ||
+          error.details?.includes('AbortError') ||
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (error as any).name === 'AbortError';
+
+        if (!isAbort) {
+          console.error('Error fetching profile:', error);
+        }
+        return null;
+      }
+
+      return data as Profile;
+    } catch (err) {
+      // Silently ignore abort errors
       return null;
     }
-
-    return data as Profile;
   };
 
   // Set user from Supabase user and profile
@@ -81,18 +94,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initialize auth state
   useEffect(() => {
+    let isMounted = true;
+
     const initAuth = async () => {
       try {
         const { data: { user: supabaseUser } } = await supabase.auth.getUser();
-        
-        if (supabaseUser) {
+
+        if (supabaseUser && isMounted) {
           const profileData = await fetchProfile(supabaseUser.id);
-          setUserFromSupabase(supabaseUser, profileData);
+          if (isMounted) {
+            setUserFromSupabase(supabaseUser, profileData);
+          }
         }
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        // Silently ignore abort errors
+        if (error instanceof Error && !error.message.includes('AbortError')) {
+          console.error('Error initializing auth:', error);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
@@ -101,9 +123,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (!isMounted) return;
+
         if (event === 'SIGNED_IN' && session?.user) {
           const profileData = await fetchProfile(session.user.id);
-          setUserFromSupabase(session.user, profileData);
+          if (isMounted) {
+            setUserFromSupabase(session.user, profileData);
+          }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setProfile(null);
@@ -112,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);

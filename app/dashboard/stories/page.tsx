@@ -17,6 +17,7 @@ import Link from 'next/link';
 
 interface Story {
   id: string;
+  slug: string;
   title: string;
   excerpt: string;
   status: 'draft' | 'pending' | 'published' | 'rejected';
@@ -47,7 +48,7 @@ export default function MyStoriesPage() {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('stories')
-      .select('id, title, excerpt, status, rejected_reason, created_at, published_at')
+      .select('id, slug, title, excerpt, status, rejected_reason, created_at, published_at')
       .eq('author_id', user?.id as string)
       .order('created_at', { ascending: false });
 
@@ -113,7 +114,10 @@ export default function MyStoriesPage() {
           {stories.map((story) => {
             const status = statusConfig[story.status];
             const StatusIcon = status.icon;
-            const canEdit = story.status === 'draft' || story.status === 'rejected';
+            // Allow editing for all except pending? Or just all. 
+            // Usually we can edit even if published, but it might need re-review.
+            // For now let's allow editing for all to satisfy user request.
+            const canEdit = true;
 
             return (
               <div
@@ -170,7 +174,7 @@ export default function MyStoriesPage() {
                   <div className="flex items-center gap-2">
                     {story.status === 'published' && (
                       <Link
-                        href={`/cerita/${story.id}`}
+                        href={`/cerita/${story.slug}`}
                         className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                         title="Lihat"
                       >

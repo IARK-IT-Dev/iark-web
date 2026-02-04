@@ -1,6 +1,7 @@
 import { ManagementCard } from './ManagementCard';
 import { createPublicClient } from '@/lib/supabase/public';
 import { unstable_cache } from 'next/cache';
+import Link from 'next/link';
 
 const getMembers = unstable_cache(
   async () => {
@@ -73,12 +74,27 @@ export async function ManagementGrid({ className = '' }: ManagementGridProps) {
           Kenali para pemimpin yang menggerakkan IARK dengan dedikasi dan integritas
         </p>
 
-        {/* Pengurus Inti Grid - With Photos */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-          {pengurusInti.map((member, index) => (
+        {/* Pengurus Inti Grid - Show top 6 only */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+          {pengurusInti.slice(0, 6).map((member, index) => (
             <ManagementCard key={member.id} member={member} index={index} />
           ))}
         </div>
+
+        {/* View All Button */}
+        {pengurusInti.length > 6 && (
+          <div className="flex justify-center mb-20">
+            <Link
+              href="/tentang"
+              className="inline-flex items-center gap-2 px-8 py-3 bg-white border-2 border-iark-blue text-iark-blue font-bold rounded-full hover:bg-iark-blue hover:text-white transition-all duration-300 shadow-lg hover:shadow-iark-blue/20"
+            >
+              Lihat Struktur Lengkap
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </Link>
+          </div>
+        )}
 
         {/* Ketua Angkatan Section - Text Only */}
         {ketuaAngkatan.length > 0 && (

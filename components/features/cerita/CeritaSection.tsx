@@ -13,6 +13,7 @@ export interface CeritaSectionProps {
 
 interface Story {
   id: string;
+  slug: string;
   name: string;
   batch: string;
   title: string;
@@ -44,6 +45,7 @@ export function CeritaSection({ className = '' }: CeritaSectionProps) {
         .select(`
           id,
           title,
+          slug,
           excerpt,
           hero_image,
           category,
@@ -66,6 +68,7 @@ export function CeritaSection({ className = '' }: CeritaSectionProps) {
 
       interface StoryResponse {
         id: string;
+        slug: string;
         title: string;
         excerpt: string | null;
         hero_image: string | null;
@@ -82,6 +85,7 @@ export function CeritaSection({ className = '' }: CeritaSectionProps) {
       const mappedStories: Story[] = ((data || []) as StoryResponse[]).map((story) => {
         return {
           id: story.id,
+          slug: story.slug,
           name: story.author?.name || 'Anonymous',
           batch: story.author?.angkatan ? `RK Angkatan ${story.author.angkatan}` : '',
           title: story.title,
@@ -213,7 +217,7 @@ export function CeritaSection({ className = '' }: CeritaSectionProps) {
                     {featuredStory.excerpt}
                   </p>
 
-                  <Link href={`/cerita/${featuredStory.id}`}>
+                  <Link href={`/cerita/${featuredStory.slug}`}>
                     <button className="bg-iark-red text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors duration-200 self-start">
                       Baca Cerita Lengkap →
                     </button>
@@ -231,13 +235,12 @@ export function CeritaSection({ className = '' }: CeritaSectionProps) {
               <button
                 key={category.id}
                 onClick={() => setActiveCategory(category.id)}
-                className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${
-                  activeCategory === category.id
+                className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${activeCategory === category.id
                     ? category.color === 'gray'
                       ? 'bg-gray-800 text-white shadow-lg scale-105'
                       : `bg-iark-${category.color} text-white shadow-lg scale-105`
                     : 'bg-white text-gray-700 hover:shadow-md hover:scale-102'
-                }`}
+                  }`}
               >
                 {category.label}
               </button>
@@ -248,63 +251,63 @@ export function CeritaSection({ className = '' }: CeritaSectionProps) {
         {/* Story Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
           {filteredStories.map((story, index) => (
-            <Link href={`/cerita/${story.id}`} key={story.id}>
+            <Link href={`/cerita/${story.slug}`} key={story.id}>
               <motion.div
                 className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 cursor-pointer group"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.1 }}
               >
-              {/* Photo */}
-              <div className="relative h-48 bg-gray-200">
-                <Image
-                  src={story.photo}
-                  alt={story.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                  unoptimized
-                />
-                <div className="absolute top-4 right-4">
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full text-xs font-bold text-white bg-iark-${getCategoryColor(
-                      story.category
-                    )}`}
-                  >
-                    {getCategoryLabel(story.category)}
+                {/* Photo */}
+                <div className="relative h-48 bg-gray-200">
+                  <Image
+                    src={story.photo}
+                    alt={story.name}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    unoptimized
+                  />
+                  <div className="absolute top-4 right-4">
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-bold text-white bg-iark-${getCategoryColor(
+                        story.category
+                      )}`}
+                    >
+                      {getCategoryLabel(story.category)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="relative w-12 h-12 rounded-full overflow-hidden ring-2 ring-gray-200">
+                      <Image
+                        src={story.photo}
+                        alt={story.name}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900 text-sm">{story.name}</p>
+                      <p className="text-xs text-gray-600">{story.batch}</p>
+                    </div>
+                  </div>
+
+                  <h3 className="text-lg font-bold text-gray-900 mb-3 group-hover:text-iark-red transition-colors">
+                    {story.title}
+                  </h3>
+
+                  <p className="text-gray-600 text-sm mb-4 leading-relaxed line-clamp-3">
+                    {story.excerpt}
+                  </p>
+
+                  <span className="text-iark-red font-semibold text-sm group-hover:underline">
+                    Baca Selengkapnya →
                   </span>
                 </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="relative w-12 h-12 rounded-full overflow-hidden ring-2 ring-gray-200">
-                    <Image
-                      src={story.photo}
-                      alt={story.name}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-900 text-sm">{story.name}</p>
-                    <p className="text-xs text-gray-600">{story.batch}</p>
-                  </div>
-                </div>
-
-                <h3 className="text-lg font-bold text-gray-900 mb-3 group-hover:text-iark-red transition-colors">
-                  {story.title}
-                </h3>
-
-                <p className="text-gray-600 text-sm mb-4 leading-relaxed line-clamp-3">
-                  {story.excerpt}
-                </p>
-
-                <span className="text-iark-red font-semibold text-sm group-hover:underline">
-                  Baca Selengkapnya →
-                </span>
-              </div>
               </motion.div>
             </Link>
           ))}

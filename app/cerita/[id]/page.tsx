@@ -3,13 +3,10 @@ import { StoryDetail } from '@/components/features/cerita';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 
-export async function generateStaticParams() {
-  return [];
-}
-
 interface StoryWithAuthor {
   id: string;
   title: string;
+  slug: string;
   excerpt: string | null;
   content: string | null;
   hero_image: string | null;
@@ -24,14 +21,18 @@ interface StoryWithAuthor {
   } | null;
 }
 
-export default async function StoryDetailPage({ params }: { params: { id: string } }) {
+export default async function StoryDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: paramValue } = await params;
+
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  // Try fetching by slug first, then by ID if it looks like a UUID
+  let query = supabase
     .from('stories')
     .select(`
       id,
       title,
+      slug,
       excerpt,
       content,
       hero_image,
@@ -44,10 +45,18 @@ export default async function StoryDetailPage({ params }: { params: { id: string
         angkatan,
         photo
       )
-    `)
-    .eq('id', params.id)
-    .eq('status', 'published')
-    .single();
+    `);
+
+  // Check if paramValue is a valid UUID
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(paramValue);
+
+  if (isUUID) {
+    query = query.or(`id.eq.${paramValue},slug.eq.${paramValue}`);
+  } else {
+    query = query.eq('slug', paramValue);
+  }
+
+  const { data, error } = await query.eq('status', 'published').maybeSingle();
 
   if (error || !data) {
     notFound();
@@ -67,10 +76,10 @@ export default async function StoryDetailPage({ params }: { params: { id: string
     readTime: storyData.read_time || '5 menit',
     publishedDate: storyData.published_at
       ? new Date(storyData.published_at).toLocaleDateString('id-ID', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-        })
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
       : '',
     name: author?.name || 'Anonymous',
     batch: author?.angkatan ? `RK Angkatan ${author.angkatan}` : '',

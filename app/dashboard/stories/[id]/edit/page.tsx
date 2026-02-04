@@ -47,12 +47,6 @@ export default function EditStoryPage() {
       return;
     }
 
-    // Only allow editing draft or rejected stories
-    if (data.status !== 'draft' && data.status !== 'rejected') {
-      router.push('/dashboard/stories');
-      return;
-    }
-
     setTitle(data.title);
     setExcerpt(data.excerpt || '');
     setContent(data.content);

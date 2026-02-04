@@ -24,21 +24,41 @@ export function AsramaGallerySection({ className = '' }: AsramaGallerySectionPro
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchDormitories() {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('dormitories')
-        .select('*');
+    const controller = new AbortController();
 
-      if (error) {
-        console.error('Error fetching dormitories:', error);
-      } else {
-        setDormitories(data || []);
+    async function fetchDormitories() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('dormitories')
+          .select('*')
+          .abortSignal(controller.signal);
+
+        if (error) {
+          if (error.code !== '20') { // 20 is Postgres code for query abortion usually, but supabase-js handles fetch abortion
+            console.error('Error fetching dormitories:', error);
+          }
+        } else {
+          setDormitories(data || []);
+        }
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          // Request was aborted, ignore
+          return;
+        }
+        console.error('Error fetching dormitories:', err);
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
     }
 
     fetchDormitories();
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   return (
