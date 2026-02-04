@@ -23,7 +23,7 @@ interface Story {
   created_at: string;
   updated_at: string;
   profiles: {
-    full_name: string;
+    name: string;
     email: string;
   };
 }
@@ -53,7 +53,7 @@ export default function AdminStoriesPage() {
 
     let query = supabase
       .from('stories')
-      .select('id, title, excerpt, status, created_at, updated_at, profiles(full_name, email)')
+      .select('id, title, excerpt, status, created_at, updated_at, profiles(name, email)')
       .order('created_at', { ascending: false });
 
     if (statusFilter !== 'all') {
@@ -111,7 +111,7 @@ export default function AdminStoriesPage() {
   const filteredStories = stories.filter(
     (story) =>
       story.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      story.profiles?.full_name?.toLowerCase().includes(searchQuery.toLowerCase())
+      story.profiles?.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -202,7 +202,7 @@ export default function AdminStoriesPage() {
                       <td className="px-6 py-4">
                         <div>
                           <p className="font-medium text-gray-900">
-                            {story.profiles?.full_name || 'Anonymous'}
+                            {story.profiles?.name || 'Anonymous'}
                           </p>
                           <p className="text-sm text-gray-500">
                             {story.profiles?.email}

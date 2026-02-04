@@ -56,7 +56,7 @@ export default function EditStoryPage() {
     setTitle(data.title);
     setExcerpt(data.excerpt || '');
     setContent(data.content);
-    setFeaturedImage(data.featured_image);
+    setFeaturedImage(data.hero_image);
     setStatus(data.status);
     setLoading(false);
   }
@@ -120,20 +120,20 @@ export default function EditStoryPage() {
       title: string;
       excerpt: string;
       content: string;
-      featured_image: string | null;
+      hero_image: string | null;
       status: string;
-      rejection_reason?: null;
+      rejected_reason?: null;
     } = {
       title: title.trim(),
       excerpt: excerpt.trim() || title.trim().substring(0, 150),
       content: content.trim(),
-      featured_image: featuredImage,
+      hero_image: featuredImage,
       status: newStatus,
     };
 
     // Clear rejection reason if resubmitting
     if (status === 'rejected' && newStatus === 'pending') {
-      updateData.rejection_reason = null;
+      updateData.rejected_reason = null;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

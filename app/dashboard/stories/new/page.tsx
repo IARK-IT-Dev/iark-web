@@ -87,9 +87,11 @@ export default function NewStoryPage() {
       .insert({
         author_id: user?.id,
         title: title.trim(),
+        slug: title.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') + '-' + Date.now(),
         excerpt: excerpt.trim() || title.trim().substring(0, 150),
         content: content.trim(),
-        featured_image: featuredImage,
+        hero_image: featuredImage,
+        category: 'karir', // Default category
         status,
       })
       .select()

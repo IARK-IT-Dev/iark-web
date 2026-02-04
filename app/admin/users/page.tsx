@@ -15,9 +15,9 @@ import {
 interface UserProfile {
   id: string;
   email: string;
-  full_name: string;
-  avatar_url: string | null;
-  batch_year: number | null;
+  name: string;
+  photo: string | null;
+  angkatan: number | null;
   bio: string | null;
   role: 'alumni' | 'admin';
   created_at: string;
@@ -59,7 +59,7 @@ export default function AdminUsersPage() {
   async function toggleAdminRole(userId: string, currentRole: string) {
     const newRole = currentRole === 'admin' ? 'alumni' : 'admin';
     const action = newRole === 'admin' ? 'menjadikan admin' : 'mencabut hak admin';
-    
+
     if (!confirm(`Apakah Anda yakin ingin ${action} user ini?`)) return;
 
     const supabase = createClient();
@@ -79,7 +79,7 @@ export default function AdminUsersPage() {
 
   const filteredUsers = users.filter(
     (user) =>
-      user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -158,10 +158,10 @@ export default function AdminUsersPage() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-iark-red/10 flex items-center justify-center flex-shrink-0">
-                          {user.avatar_url ? (
+                          {user.photo ? (
                             <img
-                              src={user.avatar_url}
-                              alt={user.full_name}
+                              src={user.photo}
+                              alt={user.name}
                               className="w-10 h-10 rounded-full object-cover"
                             />
                           ) : (
@@ -170,7 +170,7 @@ export default function AdminUsersPage() {
                         </div>
                         <div className="min-w-0">
                           <p className="font-medium text-gray-900 truncate">
-                            {user.full_name || 'No Name'}
+                            {user.name || 'No Name'}
                           </p>
                         </div>
                       </div>
@@ -182,10 +182,10 @@ export default function AdminUsersPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      {user.batch_year ? (
+                      {user.angkatan ? (
                         <div className="flex items-center gap-2 text-gray-600">
                           <GraduationCap className="w-4 h-4" />
-                          <span>{user.batch_year}</span>
+                          <span>{user.angkatan}</span>
                         </div>
                       ) : (
                         <span className="text-gray-400">-</span>
@@ -193,11 +193,10 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span
-                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
-                          user.role === 'admin'
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${user.role === 'admin'
                             ? 'bg-purple-100 text-purple-700'
                             : 'bg-gray-100 text-gray-700'
-                        }`}
+                          }`}
                       >
                         {user.role === 'admin' ? (
                           <Shield className="w-3.5 h-3.5" />
@@ -221,11 +220,10 @@ export default function AdminUsersPage() {
                       <div className="flex items-center justify-end">
                         <button
                           onClick={() => toggleAdminRole(user.id, user.role)}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                            user.role === 'admin'
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${user.role === 'admin'
                               ? 'text-red-600 hover:bg-red-50'
                               : 'text-purple-600 hover:bg-purple-50'
-                          }`}
+                            }`}
                           title={user.role === 'admin' ? 'Remove Admin' : 'Make Admin'}
                         >
                           {user.role === 'admin' ? (

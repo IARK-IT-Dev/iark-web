@@ -21,7 +21,7 @@ interface HeroSlide {
   subtitle: string | null;
   image_url: string;
   link_url: string | null;
-  display_order: number;
+  order_index: number;
   is_active: boolean;
   created_at: string;
 }
@@ -50,7 +50,7 @@ export default function AdminHeroSlidesPage() {
     const { data, error } = await supabase
       .from('hero_slides')
       .select('*')
-      .order('display_order', { ascending: true });
+      .order('order_index', { ascending: true });
 
     if (error) {
       console.error('Error fetching slides:', error);
@@ -153,12 +153,12 @@ export default function AdminHeroSlidesPage() {
       }
     } else {
       // Get next display order
-      const maxOrder = slides.length > 0 ? Math.max(...slides.map(s => s.display_order)) : 0;
+      const maxOrder = slides.length > 0 ? Math.max(...slides.map(s => s.order_index)) : 0;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase as any).from('hero_slides').insert({
         ...slideData,
-        display_order: maxOrder + 1,
+        order_index: maxOrder + 1,
       });
 
       if (error) {
@@ -223,11 +223,11 @@ export default function AdminHeroSlidesPage() {
     await Promise.all([
       (supabase as any)
         .from('hero_slides')
-        .update({ display_order: otherSlide.display_order })
+        .update({ order_index: otherSlide.order_index })
         .eq('id', currentSlide.id),
       (supabase as any)
         .from('hero_slides')
-        .update({ display_order: currentSlide.display_order })
+        .update({ order_index: currentSlide.order_index })
         .eq('id', otherSlide.id),
     ]);
 
@@ -262,9 +262,8 @@ export default function AdminHeroSlidesPage() {
             {slides.map((slide, index) => (
               <div
                 key={slide.id}
-                className={`p-4 flex items-center gap-4 ${
-                  !slide.is_active ? 'opacity-60' : ''
-                }`}
+                className={`p-4 flex items-center gap-4 ${!slide.is_active ? 'opacity-60' : ''
+                  }`}
               >
                 {/* Drag Handle & Order */}
                 <div className="flex flex-col items-center gap-1">

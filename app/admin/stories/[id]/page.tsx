@@ -19,17 +19,17 @@ interface Story {
   title: string;
   content: string;
   excerpt: string;
-  featured_image: string | null;
+  hero_image: string | null;
   status: 'draft' | 'pending' | 'published' | 'rejected';
-  rejection_reason: string | null;
+  rejected_reason: string | null;
   created_at: string;
   updated_at: string;
   published_at: string | null;
   profiles: {
-    full_name: string;
+    name: string;
     email: string;
-    avatar_url: string | null;
-    batch_year: number | null;
+    photo: string | null;
+    angkatan: number | null;
   };
 }
 
@@ -60,7 +60,7 @@ export default function StoryDetailPage() {
       .select(
         `
         *,
-        profiles(full_name, email, avatar_url, batch_year)
+        profiles(name, email, photo, angkatan)
       `
       )
       .eq('id', params.id as string)
@@ -111,7 +111,7 @@ export default function StoryDetailPage() {
       .from('stories')
       .update({
         status: 'rejected',
-        rejection_reason: rejectionReason,
+        rejected_reason: rejectionReason,
       })
       .eq('id', story.id);
 
@@ -183,10 +183,10 @@ export default function StoryDetailPage() {
       {/* Story Info */}
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
         {/* Featured Image */}
-        {story.featured_image && (
+        {story.hero_image && (
           <div className="aspect-[21/9] bg-gray-100">
             <img
-              src={story.featured_image}
+              src={story.hero_image}
               alt={story.title}
               className="w-full h-full object-cover"
             />
@@ -239,10 +239,10 @@ export default function StoryDetailPage() {
           {/* Author Info */}
           <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg mb-8">
             <div className="w-12 h-12 rounded-full bg-iark-red/10 flex items-center justify-center">
-              {story.profiles?.avatar_url ? (
+              {story.profiles?.photo ? (
                 <img
-                  src={story.profiles.avatar_url}
-                  alt={story.profiles.full_name}
+                  src={story.profiles.photo}
+                  alt={story.profiles.name}
                   className="w-12 h-12 rounded-full object-cover"
                 />
               ) : (
@@ -251,20 +251,20 @@ export default function StoryDetailPage() {
             </div>
             <div>
               <p className="font-semibold text-gray-900">
-                {story.profiles?.full_name || 'Anonymous'}
+                {story.profiles?.name || 'Anonymous'}
               </p>
               <p className="text-sm text-gray-500">
                 {story.profiles?.email}
-                {story.profiles?.batch_year && ` • Angkatan ${story.profiles.batch_year}`}
+                {story.profiles?.angkatan && ` • Angkatan ${story.profiles.angkatan}`}
               </p>
             </div>
           </div>
 
           {/* Rejection Reason */}
-          {story.status === 'rejected' && story.rejection_reason && (
+          {story.status === 'rejected' && story.rejected_reason && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg mb-8">
               <p className="text-sm font-medium text-red-800 mb-1">Alasan Penolakan:</p>
-              <p className="text-red-700">{story.rejection_reason}</p>
+              <p className="text-red-700">{story.rejected_reason}</p>
             </div>
           )}
 

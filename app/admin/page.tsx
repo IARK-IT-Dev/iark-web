@@ -24,7 +24,7 @@ interface PendingStory {
   title: string;
   created_at: string;
   profiles: {
-    full_name: string;
+    name: string;
   };
 }
 
@@ -64,7 +64,7 @@ export default function AdminDashboard() {
         // Fetch pending stories for review
         const { data: pending } = await supabase
           .from('stories')
-          .select('id, title, created_at, profiles(full_name)')
+          .select('id, title, created_at, profiles(name)')
           .eq('status', 'pending')
           .order('created_at', { ascending: false })
           .limit(5);
@@ -186,7 +186,7 @@ export default function AdminDashboard() {
                     {story.title}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    oleh {story.profiles?.full_name || 'Anonymous'} •{' '}
+                    oleh {story.profiles?.name || 'Anonymous'} •{' '}
                     {new Date(story.created_at).toLocaleDateString('id-ID')}
                   </p>
                 </div>
