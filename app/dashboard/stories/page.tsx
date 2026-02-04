@@ -20,7 +20,7 @@ interface Story {
   title: string;
   excerpt: string;
   status: 'draft' | 'pending' | 'published' | 'rejected';
-  rejection_reason: string | null;
+  rejected_reason: string | null;
   created_at: string;
   published_at: string | null;
 }
@@ -47,7 +47,7 @@ export default function MyStoriesPage() {
     const supabase = createClient();
     const { data, error } = await supabase
       .from('stories')
-      .select('id, title, excerpt, status, rejection_reason, created_at, published_at')
+      .select('id, title, excerpt, status, rejected_reason, created_at, published_at')
       .eq('author_id', user?.id as string)
       .order('created_at', { ascending: false });
 
@@ -157,12 +157,12 @@ export default function MyStoriesPage() {
                     </p>
 
                     {/* Rejection reason */}
-                    {story.status === 'rejected' && story.rejection_reason && (
+                    {story.status === 'rejected' && story.rejected_reason && (
                       <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-lg">
                         <p className="text-xs font-medium text-red-800 mb-1">
                           Alasan Penolakan:
                         </p>
-                        <p className="text-sm text-red-700">{story.rejection_reason}</p>
+                        <p className="text-sm text-red-700">{story.rejected_reason}</p>
                       </div>
                     )}
                   </div>
