@@ -25,6 +25,7 @@ export function Header({ className = '' }: HeaderProps) {
     { href: '/', label: 'Home' },
     { href: '/tentang', label: 'Tentang' },
     { href: '/bidang', label: 'Bidang' },
+    { href: '/kegiatan', label: 'Kegiatan' },
     { href: '/cerita', label: 'Cerita' },
     { href: '/donasi', label: 'Donasi' },
   ];
@@ -121,8 +122,8 @@ export function Header({ className = '' }: HeaderProps) {
         <Link href={targetLink} className="relative ml-auto hidden lg:block" onClick={(e) => handleNavigation(e, targetLink)}>
           <motion.div
             className={`text-iark-red font-bold italic flex items-center cursor-pointer rounded-full border md:border-2 border-iark-red transition-all duration-300 ${isScrolled
-                ? 'text-base md:text-lg lg:text-xl py-1 md:py-1.5 px-3 md:px-4 lg:px-6'
-                : 'text-base md:text-xl lg:text-2xl py-1.5 md:py-2 px-4 md:px-6 lg:px-8'
+              ? 'text-base md:text-lg lg:text-xl py-1 md:py-1.5 px-3 md:px-4 lg:px-6'
+              : 'text-base md:text-xl lg:text-2xl py-1.5 md:py-2 px-4 md:px-6 lg:px-8'
               }`}
             onHoverStart={() => setIsHovering(true)}
             onHoverEnd={() => setIsHovering(false)}
@@ -306,8 +307,8 @@ export function Header({ className = '' }: HeaderProps) {
                 <Link
                   href={link.href}
                   className={`block py-3 px-4 ${isActive
-                      ? 'bg-iark-red/10 text-iark-red border-l-4 border-iark-red'
-                      : 'text-gray-800 hover:bg-gray-100 hover:text-iark-red'
+                    ? 'bg-iark-red/10 text-iark-red border-l-4 border-iark-red'
+                    : 'text-gray-800 hover:bg-gray-100 hover:text-iark-red'
                     } font-semibold rounded-lg transition-colors`}
                   onClick={(e) => {
                     setIsMobileMenuOpen(false);

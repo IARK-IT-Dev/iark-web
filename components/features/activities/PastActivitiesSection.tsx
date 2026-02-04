@@ -91,10 +91,10 @@ export async function PastActivitiesSection({ className = '' }: PastActivitiesSe
         {/* Read More Link */}
         <div className="text-center">
           <Link
-            href="/cerita"
+            href="/kegiatan"
             className="inline-flex items-center gap-2 text-iark-red font-semibold hover:text-red-700 transition-colors duration-300 group"
           >
-            Lihat Semua Cerita
+            Lihat Semua Kegiatan
             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
           </Link>
         </div>
