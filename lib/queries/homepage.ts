@@ -6,6 +6,7 @@ type Testimonial = Database['public']['Tables']['testimonials']['Row'];
 export type Activity = Database['public']['Tables']['activities']['Row'];
 type Management = Database['public']['Tables']['management']['Row'];
 type Dormitory = Database['public']['Tables']['dormitories']['Row'];
+export type Cluster = Database['public']['Tables']['clusters']['Row'];
 
 export interface HomepageData {
   heroSlides: HeroSlide[];
@@ -14,6 +15,7 @@ export interface HomepageData {
   recentActivities: Activity[];
   management: Management[];
   dormitories: Dormitory[];
+  clusters: Cluster[];
 }
 
 export interface FeaturedStory {
@@ -35,6 +37,7 @@ interface HomepageRpcResponse {
   recent_activities: Activity[];
   management: Management[];
   dormitories: Dormitory[];
+  clusters: Cluster[];
 }
 
 // Fetch all homepage data in a single RPC call
@@ -57,6 +60,7 @@ export async function fetchHomepageData(): Promise<HomepageData> {
     recentActivities: rpcData.recent_activities || [],
     management: rpcData.management || [],
     dormitories: rpcData.dormitories || [],
+    clusters: rpcData.clusters || [],
   };
 }
 
@@ -71,6 +75,7 @@ async function fetchHomepageDataFallback(): Promise<HomepageData> {
     activitiesRes,
     managementRes,
     dormitoriesRes,
+    clustersRes,
   ] = await Promise.all([
     supabase
       .from('hero_slides')
@@ -110,6 +115,11 @@ async function fetchHomepageDataFallback(): Promise<HomepageData> {
       .select('*')
       .order('name', { ascending: true })
       .limit(20),
+    supabase
+      .from('clusters')
+      .select('*')
+      .order('order_index', { ascending: true })
+      .limit(20),
   ]);
 
   interface StoryWithAuthor {
@@ -143,6 +153,7 @@ async function fetchHomepageDataFallback(): Promise<HomepageData> {
     recentActivities: activitiesRes.data || [],
     management: managementRes.data || [],
     dormitories: dormitoriesRes.data || [],
+    clusters: clustersRes.data || [],
   };
 }
 

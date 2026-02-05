@@ -13,9 +13,7 @@ export interface HeaderProps {
 }
 
 export function Header({ className = '' }: HeaderProps) {
-  const router = useRouter();
   const pathname = usePathname();
-  const { startTransition, completeTransition } = useTransition();
   const { user, isAuthenticated } = useAuth();
   const [isHovering, setIsHovering] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -40,29 +38,6 @@ export function Header({ className = '' }: HeaderProps) {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  // Smooth scroll to top then navigate with transition
-  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
-
-    // Start smooth scroll to top
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // Start transition overlay after scroll begins (300ms delay)
-    setTimeout(() => {
-      startTransition();
-    }, 300);
-
-    // Navigate after scroll + header transition complete (800ms)
-    setTimeout(() => {
-      router.push(href);
-
-      // Complete transition (fade out overlay) after navigation
-      setTimeout(() => {
-        completeTransition();
-      }, 100);
-    }, 800);
-  };
 
   const getTargetLink = () => {
     if (!isAuthenticated) return '/masuk';
@@ -90,7 +65,6 @@ export function Header({ className = '' }: HeaderProps) {
               <Link
                 key={link.href}
                 href={link.href}
-                onClick={(e) => handleNavigation(e, link.href)}
                 className={`${isActive ? 'text-iark-red' : 'text-gray-800 hover:text-iark-red'
                   } font-semibold transition-all duration-200 relative group ${isScrolled ? 'text-base' : 'text-lg'
                   }`}
@@ -119,7 +93,7 @@ export function Header({ className = '' }: HeaderProps) {
         </nav>
 
         {/* Right: Interactive #RayakanKontribusi Sign-in Link */}
-        <Link href={targetLink} className="relative ml-auto hidden lg:block" onClick={(e) => handleNavigation(e, targetLink)}>
+        <Link href={targetLink} className="relative ml-auto hidden lg:block">
           <motion.div
             className={`text-iark-red font-bold italic flex items-center cursor-pointer rounded-full border md:border-2 border-iark-red transition-all duration-300 ${isScrolled
               ? 'text-base md:text-lg lg:text-xl py-1 md:py-1.5 px-3 md:px-4 lg:px-6'
@@ -310,9 +284,8 @@ export function Header({ className = '' }: HeaderProps) {
                     ? 'bg-iark-red/10 text-iark-red border-l-4 border-iark-red'
                     : 'text-gray-800 hover:bg-gray-100 hover:text-iark-red'
                     } font-semibold rounded-lg transition-colors`}
-                  onClick={(e) => {
+                  onClick={() => {
                     setIsMobileMenuOpen(false);
-                    handleNavigation(e, link.href);
                   }}
                 >
                   {link.label}
@@ -330,9 +303,8 @@ export function Header({ className = '' }: HeaderProps) {
             <Link
               href={targetLink}
               className="block mt-4 py-3 px-4 bg-iark-red text-white text-center font-bold rounded-lg hover:bg-red-700 transition-colors"
-              onClick={(e) => {
+              onClick={() => {
                 setIsMobileMenuOpen(false);
-                handleNavigation(e, targetLink);
               }}
             >
               #RayakanKontribusi

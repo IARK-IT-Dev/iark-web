@@ -23,7 +23,7 @@ export default async function Home() {
       <Header />
       <HeroSection initialData={homepageData.heroSlides} />
       <AboutSection />
-      <BidangPreviewSection />
+      <BidangPreviewSection initialData={homepageData.clusters} />
       <BatchStoriesSection initialData={batchStoriesData} />
       <ManagementGrid initialData={homepageData.management} />
       <TestimoniSection initialData={homepageData.featuredStories} />

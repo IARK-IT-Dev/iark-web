@@ -19,23 +19,17 @@ import {
   LucideIcon,
   Loader2,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
-
-interface Cluster {
-  id: string;
-  name: string;
-  short_name: string;
-  description: string;
-  icon: string;
-  color: 'red' | 'blue' | 'yellow';
-  order_index: number;
-}
+import { createPublicClient as createClient } from '@/lib/supabase/public';
+import { queryKeys, staleTime } from '@/lib/queries';
+import { useQuery } from '@tanstack/react-query';
+import { Cluster } from '@/lib/queries/homepage';
 
 export interface BidangPreviewSectionProps {
   className?: string;
+  initialData?: Cluster[];
 }
 
-const iconMap: Record<string, LucideIcon> = {
+const iconMap: Record<string, LucideIcon | undefined> = {
   GraduationCap,
   Heart,
   BookOpen,
@@ -70,9 +64,21 @@ const colorClasses = {
   },
 };
 
+const fetchClusters = async (): Promise<Cluster[]> => {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('clusters')
+    .select('*')
+    .order('order_index');
+
+  if (error) throw error;
+  return data || [];
+};
+
 function BidangCard({ cluster, index }: { cluster: Cluster; index: number }) {
-  const Icon = iconMap[cluster.icon] || Users;
-  const colors = colorClasses[cluster.color];
+  const Icon = cluster.icon ? (iconMap[cluster.icon] || Users) : Users;
+  const colorKey = (cluster.color as 'red' | 'blue' | 'yellow') || 'blue';
+  const colors = colorClasses[colorKey];
 
   return (
     <motion.div
@@ -95,26 +101,16 @@ function BidangCard({ cluster, index }: { cluster: Cluster; index: number }) {
   );
 }
 
-export function BidangPreviewSection({ className = '' }: BidangPreviewSectionProps) {
-  const [clusters, setClusters] = useState<Cluster[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    async function fetchClusters() {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('clusters')
-        .select('*')
-        .order('order_index');
-
-      if (!error && data) {
-        setClusters(data);
-      }
-      setLoading(false);
-    }
-
-    fetchClusters();
-  }, []);
+export function BidangPreviewSection({
+  className = '',
+  initialData
+}: BidangPreviewSectionProps) {
+  const { data: clusters = [], isLoading } = useQuery({
+    queryKey: queryKeys.homepage, // Part of homepage data
+    queryFn: fetchClusters,
+    initialData: initialData,
+    staleTime: staleTime.static,
+  });
 
   return (
     <section className={`relative py-24 px-8 bg-gray-50 overflow-hidden ${className}`}>
@@ -140,7 +136,7 @@ export function BidangPreviewSection({ className = '' }: BidangPreviewSectionPro
           Cluster-cluster yang berdedikasi melayani alumni dan mengembangkan kepemimpinan berintegritas
         </p>
 
-        {loading ? (
+        {isLoading && clusters.length === 0 ? (
           <div className="flex justify-center items-center py-16">
             <Loader2 className="w-8 h-8 text-iark-blue animate-spin" />
           </div>
