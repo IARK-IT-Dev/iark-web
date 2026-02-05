@@ -15,6 +15,13 @@ export function HeroSection({ className = '', initialData }: HeroSectionProps) {
 
   return (
     <section className={`relative min-h-screen bg-white overflow-hidden ${className}`}>
+      {/* Invisible focal point to anchor the scroll on load */}
+      <div
+        className="absolute top-0 left-0 w-px h-px opacity-0 pointer-events-none"
+        aria-hidden="true"
+        tabIndex={-1}
+        autoFocus
+      />
       {/* Subtle gradient orbs background */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-iark-red/5 rounded-full blur-3xl" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-iark-blue/5 rounded-full blur-3xl" />

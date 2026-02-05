@@ -22,6 +22,13 @@ export function PageTransitionProvider({ children }: PageTransitionProviderProps
   useEffect(() => {
     // Force scroll to top when pathname changes
     window.scrollTo(0, 0);
+
+    // Safety timeout for dynamic content hydration
+    const timer = setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, [pathname]);
 
   useEffect(() => {
