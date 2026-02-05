@@ -6,48 +6,42 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
-interface HeroSlide {
+import { useQuery } from '@tanstack/react-query';
+import { fetchHeroSlides } from '@/lib/queries/homepage';
+import { queryKeys, staleTime } from '@/lib/queries';
+
+export interface HeroSlide {
   id: string;
   title: string;
   subtitle: string | null;
   image_url: string;
   link_url: string | null;
-  order_index: number;
+  order_index: number | null;
   is_active: boolean;
+  created_at: string;
 }
 
 export interface EventCarouselProps {
   className?: string;
   autoPlayInterval?: number;
+  initialData?: HeroSlide[];
 }
 
 export function EventCarousel({
   className = '',
   autoPlayInterval = 5000,
+  initialData,
 }: EventCarouselProps) {
-  const [slides, setSlides] = useState<HeroSlide[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: slides = [], isLoading } = useQuery({
+    queryKey: queryKeys.heroSlides,
+    queryFn: fetchHeroSlides,
+    initialData: initialData as any,
+    staleTime: staleTime.static,
+  });
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
-
-  useEffect(() => {
-    async function fetchSlides() {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('hero_slides')
-        .select('*')
-        .eq('is_active', true)
-        .order('order_index', { ascending: true });
-
-      if (!error && data) {
-        setSlides(data);
-      }
-      setIsLoading(false);
-    }
-
-    fetchSlides();
-  }, []);
 
   const maxSlides = Math.min(slides.length, 5);
   const displaySlides = slides.slice(0, maxSlides);
@@ -214,15 +208,14 @@ export function EventCarousel({
 
       {/* Navigation Dots */}
       <div className="flex justify-center gap-2 mt-4">
-        {displaySlides.map((_, index) => (
+        {displaySlides.map((_: any, index: number) => (
           <button
             key={index}
             onClick={() => goToSlide(index)}
-            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-              index === currentIndex
-                ? 'bg-iark-red w-8'
-                : 'bg-gray-300 hover:bg-gray-400'
-            }`}
+            className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${index === currentIndex
+              ? 'bg-iark-red w-8'
+              : 'bg-gray-300 hover:bg-gray-400'
+              }`}
             aria-label={`Go to slide ${index + 1}`}
           />
         ))}

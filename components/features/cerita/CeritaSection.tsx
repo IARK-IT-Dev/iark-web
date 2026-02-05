@@ -11,6 +11,7 @@ import type { StoryCategory } from '@/lib/supabase/types';
 
 export interface CeritaSectionProps {
   className?: string;
+  initialData?: APIStory[];
 }
 
 interface Story {
@@ -43,18 +44,22 @@ function mapStory(story: APIStory): Story {
     title: story.title,
     excerpt: story.excerpt || '',
     photo: story.hero_image || story.author_photo || '/images/placeholder.jpg',
-    category: story.category,
+    category: story.category as StoryCategory,
     featured: story.featured,
   };
 }
 
-export function CeritaSection({ className = '' }: CeritaSectionProps) {
+export function CeritaSection({
+  className = '',
+  initialData
+}: CeritaSectionProps) {
   const [activeCategory, setActiveCategory] = useState('semua');
 
   const { data: apiStories = [], isLoading } = useQuery({
-    queryKey: queryKeys.storiesPublished(),
-    queryFn: () => fetchPublishedStories(),
-    staleTime: staleTime.semiDynamic,
+    queryKey: queryKeys.storiesPublished(activeCategory === 'semua' ? undefined : activeCategory),
+    queryFn: () => fetchPublishedStories(20, 0, activeCategory === 'semua' ? undefined : activeCategory as StoryCategory),
+    initialData: activeCategory === 'semua' ? initialData : undefined,
+    staleTime: staleTime.static,
   });
 
   const stories = apiStories.map(mapStory);
@@ -192,10 +197,10 @@ export function CeritaSection({ className = '' }: CeritaSectionProps) {
                 key={category.id}
                 onClick={() => setActiveCategory(category.id)}
                 className={`px-6 py-3 rounded-full font-semibold transition-all duration-300 ${activeCategory === category.id
-                    ? category.color === 'gray'
-                      ? 'bg-gray-800 text-white shadow-lg scale-105'
-                      : `bg-iark-${category.color} text-white shadow-lg scale-105`
-                    : 'bg-white text-gray-700 hover:shadow-md hover:scale-102'
+                  ? category.color === 'gray'
+                    ? 'bg-gray-800 text-white shadow-lg scale-105'
+                    : `bg-iark-${category.color} text-white shadow-lg scale-105`
+                  : 'bg-white text-gray-700 hover:shadow-md hover:scale-102'
                   }`}
               >
                 {category.label}

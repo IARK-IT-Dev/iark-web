@@ -1,51 +1,14 @@
-import { createPublicClient } from '@/lib/supabase/public';
-import type { Database } from '@/lib/supabase/types';
+import type { FeaturedStory } from '@/lib/queries/homepage';
 import Image from 'next/image';
 import Link from 'next/link';
-import { unstable_cache } from 'next/cache';
-
-const getStories = unstable_cache(
-  async () => {
-    const supabase = createPublicClient();
-    const { data, error } = await supabase
-      .from('stories')
-      .select(`
-        *,
-        profiles:author_id (
-          name,
-          photo,
-          angkatan
-        )
-      `)
-      .eq('status', 'published')
-      .order('published_at', { ascending: false })
-      .limit(3);
-
-    if (error) throw error;
-    return data as StoryWithAuthor[];
-  },
-  ['stories-home'],
-  { revalidate: 3600, tags: ['stories'] }
-);
-
-type Story = Database['public']['Tables']['stories']['Row'];
-type Profile = Database['public']['Tables']['profiles']['Row'];
-
-interface StoryWithAuthor extends Story {
-  profiles: Pick<Profile, 'name' | 'photo' | 'angkatan'> | null;
-}
 
 export interface TestimoniSectionProps {
   className?: string;
+  initialData?: FeaturedStory[];
 }
 
-export async function TestimoniSection({ className = '' }: TestimoniSectionProps) {
-  let stories: StoryWithAuthor[] = [];
-  try {
-    stories = await getStories();
-  } catch (error) {
-    console.error('Error fetching stories:', error);
-  }
+export function TestimoniSection({ className = '', initialData }: TestimoniSectionProps) {
+  const stories = initialData || [];
 
   return (
     <section className={`relative py-24 px-8 bg-white overflow-hidden ${className}`}>
@@ -119,12 +82,13 @@ export async function TestimoniSection({ className = '' }: TestimoniSectionProps
                   {/* Author */}
                   <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100">
                     <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200">
-                      {story.profiles?.photo ? (
+                      {story.author_photo ? (
                         <Image
-                          src={story.profiles.photo}
-                          alt={story.profiles.name || 'Author'}
+                          src={story.author_photo}
+                          alt={story.author_name || 'Author'}
                           fill
                           className="object-cover"
+                          unoptimized
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -136,19 +100,14 @@ export async function TestimoniSection({ className = '' }: TestimoniSectionProps
                     </div>
                     <div>
                       <p className="text-sm font-medium text-iark-black">
-                        {story.profiles?.name || 'Anonim'}
+                        {story.author_name || 'Anonim'}
                       </p>
-                      {story.profiles?.angkatan && (
+                      {story.author_angkatan && (
                         <p className="text-xs text-gray-500">
-                          Angkatan {story.profiles.angkatan}
+                          Angkatan {story.author_angkatan}
                         </p>
                       )}
                     </div>
-                    {story.read_time && (
-                      <span className="ml-auto text-xs text-gray-400">
-                        {story.read_time}
-                      </span>
-                    )}
                   </div>
                 </div>
               </Link>

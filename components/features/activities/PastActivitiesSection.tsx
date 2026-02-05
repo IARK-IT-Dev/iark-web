@@ -1,25 +1,6 @@
-import { createPublicClient } from '@/lib/supabase/public';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { ActivityCard } from './ActivityCard';
-import { unstable_cache } from 'next/cache';
-
-const getActivities = unstable_cache(
-  async () => {
-    const supabase = createPublicClient();
-    const { data, error } = await supabase
-      .from('activities')
-      .select('*')
-      .eq('is_active', true)
-      .order('date', { ascending: false })
-      .limit(5);
-
-    if (error) throw error;
-    return (data || []) as Activity[];
-  },
-  ['activities-home'],
-  { revalidate: 3600, tags: ['activities'] }
-);
 
 export interface Activity {
   id: string;
@@ -34,19 +15,16 @@ export interface Activity {
   image_url: string | null;
   link: string | null;
   is_active: boolean;
+  created_at: string;
 }
 
 export interface PastActivitiesSectionProps {
   className?: string;
+  initialData?: Activity[];
 }
 
-export async function PastActivitiesSection({ className = '' }: PastActivitiesSectionProps) {
-  let activities: Activity[] = [];
-  try {
-    activities = await getActivities();
-  } catch (error) {
-    console.error('Error fetching activities:', error);
-  }
+export function PastActivitiesSection({ className = '', initialData }: PastActivitiesSectionProps) {
+  const activities = initialData || [];
 
   return (
     <section className={`relative py-24 px-8 bg-gray-50 overflow-hidden ${className}`}>

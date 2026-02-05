@@ -4,19 +4,25 @@ import { rateLimit } from '../security/rate-limit';
 
 export async function updateSession(request: NextRequest) {
   // 1. Rate Limiting Check
-  const forwarded = request.headers.get('x-forwarded-for');
-  const ip = forwarded ? forwarded.split(',')[0] : '127.0.0.1';
+  // Get IP from headers, checking multiple common proxy headers for production (Netlify/Vercel)
+  const ip = request.headers.get('x-nf-client-connection-ip') ||
+    request.headers.get('x-real-ip') ||
+    request.headers.get('x-forwarded-for')?.split(',')[0] ||
+    '127.0.0.1';
   const isAuthRoute = request.nextUrl.pathname.startsWith('/auth') ||
     request.nextUrl.pathname.startsWith('/masuk') ||
     request.nextUrl.pathname.startsWith('/daftar');
 
+  /* 
+  // Temporarily disabling custom rate limit as it's causing 429 in production
   const rlConfig = isAuthRoute
-    ? { limit: 10, windowMs: 60000 } // Auth: 10 req/min
-    : { limit: 100, windowMs: 60000 }; // Others: 100 req/min
+    ? { limit: 60, windowMs: 60000 }
+    : { limit: 300, windowMs: 60000 };
 
   const rlResult = rateLimit(ip, rlConfig);
 
   if (!rlResult.success) {
+    console.warn(`Rate limit exceeded for IP: ${ip} on path: ${request.nextUrl.pathname}`);
     return new NextResponse('Too Many Requests', {
       status: 429,
       headers: {
@@ -26,6 +32,7 @@ export async function updateSession(request: NextRequest) {
       }
     });
   }
+  */
 
   let supabaseResponse = NextResponse.next({
     request,

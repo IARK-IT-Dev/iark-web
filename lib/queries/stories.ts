@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/client';
+import { createPublicClient as createClient } from '@/lib/supabase/public';
 import type { StoryCategory } from '@/lib/supabase/types';
 
 export interface Story {
@@ -29,7 +29,7 @@ export async function fetchPublishedStories(
   category?: StoryCategory
 ): Promise<Story[]> {
   const supabase = createClient();
-  
+
   // Try RPC first - cast to any since RPC types aren't defined
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any).rpc('get_published_stories', {
@@ -37,12 +37,12 @@ export async function fetchPublishedStories(
     p_offset: offset,
     p_category: category || null,
   });
-  
+
   if (error) {
     console.error('RPC failed, using fallback:', error);
     return fetchPublishedStoriesFallback(limit, offset, category);
   }
-  
+
   return (data || []) as Story[];
 }
 
@@ -53,7 +53,7 @@ async function fetchPublishedStoriesFallback(
   category?: StoryCategory
 ): Promise<Story[]> {
   const supabase = createClient();
-  
+
   let query = supabase
     .from('stories')
     .select(`
@@ -63,14 +63,14 @@ async function fetchPublishedStoriesFallback(
     .eq('status', 'published')
     .order('published_at', { ascending: false })
     .range(offset, offset + limit - 1);
-  
+
   if (category) {
     query = query.eq('category', category);
   }
-  
+
   const { data, error } = await query;
   if (error) throw error;
-  
+
   interface StoryWithAuthor {
     id: string;
     title: string;
@@ -86,7 +86,7 @@ async function fetchPublishedStoriesFallback(
       photo: string | null;
     } | null;
   }
-  
+
   return ((data || []) as StoryWithAuthor[]).map((s) => ({
     id: s.id,
     title: s.title,
@@ -105,7 +105,7 @@ async function fetchPublishedStoriesFallback(
 // Fetch single story by slug
 export async function fetchStoryBySlug(slug: string): Promise<StoryDetail | null> {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase
     .from('stories')
     .select(`
@@ -116,10 +116,10 @@ export async function fetchStoryBySlug(slug: string): Promise<StoryDetail | null
     .eq('slug', slug)
     .eq('status', 'published')
     .maybeSingle();
-  
+
   if (error) throw error;
   if (!data) return null;
-  
+
   interface StoryResponse {
     id: string;
     title: string;
@@ -139,9 +139,9 @@ export async function fetchStoryBySlug(slug: string): Promise<StoryDetail | null
       photo: string | null;
     } | null;
   }
-  
+
   const story = data as StoryResponse;
-  
+
   return {
     id: story.id,
     title: story.title,
@@ -164,13 +164,13 @@ export async function fetchStoryBySlug(slug: string): Promise<StoryDetail | null
 // Fetch stories by author (for dashboard)
 export async function fetchStoriesByAuthor(authorId: string) {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase
     .from('stories')
     .select('*')
     .eq('author_id', authorId)
     .order('created_at', { ascending: false });
-  
+
   if (error) throw error;
   return data;
 }

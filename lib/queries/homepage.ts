@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/client';
+import { createPublicClient as createClient } from '@/lib/supabase/public';
 import type { Database } from '@/lib/supabase/types';
 
 type HeroSlide = Database['public']['Tables']['hero_slides']['Row'];
@@ -40,15 +40,15 @@ interface HomepageRpcResponse {
 // Fetch all homepage data in a single RPC call
 export async function fetchHomepageData(): Promise<HomepageData> {
   const supabase = createClient();
-  
+
   const { data, error } = await supabase.rpc('get_homepage_data');
-  
+
   if (error) {
     console.error('Error fetching homepage data:', error);
     // Fallback to individual queries if RPC fails
     return fetchHomepageDataFallback();
   }
-  
+
   const rpcData = data as HomepageRpcResponse;
   return {
     heroSlides: rpcData.hero_slides || [],
@@ -63,7 +63,7 @@ export async function fetchHomepageData(): Promise<HomepageData> {
 // Fallback: fetch data with parallel queries
 async function fetchHomepageDataFallback(): Promise<HomepageData> {
   const supabase = createClient();
-  
+
   const [
     heroSlidesRes,
     testimonialsRes,
@@ -111,7 +111,7 @@ async function fetchHomepageDataFallback(): Promise<HomepageData> {
       .order('name', { ascending: true })
       .limit(20),
   ]);
-  
+
   interface StoryWithAuthor {
     id: string;
     title: string;
@@ -125,7 +125,7 @@ async function fetchHomepageDataFallback(): Promise<HomepageData> {
       photo: string | null;
     } | null;
   }
-  
+
   return {
     heroSlides: heroSlidesRes.data || [],
     testimonials: testimonialsRes.data || [],
@@ -154,7 +154,7 @@ export async function fetchHeroSlides() {
     .select('*')
     .eq('is_active', true)
     .order('order_index', { ascending: true });
-  
+
   if (error) throw error;
   return data;
 }
@@ -166,11 +166,11 @@ export async function fetchTestimonials(type?: 'ketua_angkatan' | 'tokoh_ternama
     .select('*')
     .eq('is_active', true)
     .order('order_index', { ascending: true });
-  
+
   if (type) {
     query = query.eq('type', type);
   }
-  
+
   const { data, error } = await query;
   if (error) throw error;
   return data;
@@ -183,7 +183,7 @@ export async function fetchTestimonialsAdmin() {
     .select('*')
     .order('order_index', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: false });
-  
+
   if (error) throw error;
   return data;
 }
@@ -194,7 +194,7 @@ export async function fetchManagement() {
     .from('management')
     .select('*')
     .order('order_index', { ascending: true });
-  
+
   if (error) throw error;
   return data;
 }
@@ -205,7 +205,7 @@ export async function fetchDormitories() {
     .from('dormitories')
     .select('*')
     .order('name', { ascending: true });
-  
+
   if (error) throw error;
   return data;
 }
@@ -217,7 +217,7 @@ export async function fetchActivities(): Promise<Activity[]> {
     .select('*')
     .eq('is_active', true)
     .order('date', { ascending: false });
-  
+
   if (error) throw error;
   return data || [];
 }

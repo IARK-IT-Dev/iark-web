@@ -22,25 +22,21 @@ export interface ManagementMember {
   id: string;
   name: string;
   position: string;
-  angkatan: string;
+  angkatan: string | null;
   photo: string | null;
   role: string;
   instagram: string | null;
   linkedin: string | null;
-  order_index: number;
+  order_index: number | null;
 }
 
 export interface ManagementGridProps {
   className?: string;
+  initialData?: ManagementMember[];
 }
 
-export async function ManagementGrid({ className = '' }: ManagementGridProps) {
-  let allMembers: ManagementMember[] = [];
-  try {
-    allMembers = await getMembers();
-  } catch (error) {
-    console.error('Error fetching management:', error);
-  }
+export function ManagementGrid({ className = '', initialData }: ManagementGridProps) {
+  const allMembers = initialData || [];
 
   const pengurusInti = allMembers.filter((m) => m.role === 'pengurus_inti');
   const ketuaAngkatan = allMembers.filter((m) => m.role === 'ketua_angkatan');

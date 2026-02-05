@@ -7,22 +7,27 @@ import { useQuery } from '@tanstack/react-query';
 import { BatchTabs } from './BatchTabs';
 import { FunFactCard } from './FunFactCard';
 import { LeaderProfileCard } from './LeaderProfileCard';
-import { fetchBatchStoriesData } from '@/lib/queries/batches';
+import { fetchBatchStoriesData, type BatchStoriesData } from '@/lib/queries/batches';
 import { queryKeys, staleTime } from '@/lib/queries';
 
 export interface BatchStoriesSectionProps {
   className?: string;
+  initialData?: BatchStoriesData;
 }
 
 type MainTabType = 'angkatan' | 'tokoh';
 
-export function BatchStoriesSection({ className = '' }: BatchStoriesSectionProps) {
+export function BatchStoriesSection({
+  className = '',
+  initialData
+}: BatchStoriesSectionProps) {
   const [mainTab, setMainTab] = useState<MainTabType>('angkatan');
   const [activeAngkatan, setActiveAngkatan] = useState(1);
 
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.batchesWithLeaders,
     queryFn: fetchBatchStoriesData,
+    initialData: initialData,
     staleTime: staleTime.static,
   });
 
@@ -89,11 +94,10 @@ export function BatchStoriesSection({ className = '' }: BatchStoriesSectionProps
             <button
               key={tab.value}
               onClick={() => setMainTab(tab.value)}
-              className={`px-8 py-3 rounded-full font-semibold text-lg transition-all duration-300 ${
-                mainTab === tab.value
+              className={`px-8 py-3 rounded-full font-semibold text-lg transition-all duration-300 ${mainTab === tab.value
                   ? 'bg-iark-red text-white shadow-lg'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+                }`}
             >
               {tab.label}
             </button>
