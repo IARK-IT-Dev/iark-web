@@ -53,6 +53,17 @@ export async function fetchHomepageData(): Promise<HomepageData> {
   }
 
   const rpcData = data as HomepageRpcResponse;
+
+  // If RPC doesn't provide clusters, fetch it separately to ensure stability
+  let clusters = rpcData.clusters || [];
+  if (clusters.length === 0) {
+    const { data: clusterData } = await supabase
+      .from('clusters')
+      .select('*')
+      .order('order_index');
+    clusters = clusterData || [];
+  }
+
   return {
     heroSlides: rpcData.hero_slides || [],
     testimonials: rpcData.testimonials || [],
@@ -60,7 +71,7 @@ export async function fetchHomepageData(): Promise<HomepageData> {
     recentActivities: rpcData.recent_activities || [],
     management: rpcData.management || [],
     dormitories: rpcData.dormitories || [],
-    clusters: rpcData.clusters || [],
+    clusters: clusters,
   };
 }
 

@@ -26,6 +26,7 @@ export function Header({ className = '' }: HeaderProps) {
     { href: '/kegiatan', label: 'Kegiatan' },
     { href: '/cerita', label: 'Cerita' },
     { href: '/donasi', label: 'Donasi' },
+    ...(isAuthenticated ? [{ href: '/dashboard/profile', label: 'Profil' }] : []),
   ];
 
   // Scroll detection

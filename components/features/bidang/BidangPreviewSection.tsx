@@ -106,7 +106,7 @@ export function BidangPreviewSection({
   initialData
 }: BidangPreviewSectionProps) {
   const { data: clusters = [], isLoading } = useQuery({
-    queryKey: queryKeys.homepage, // Part of homepage data
+    queryKey: queryKeys.clusters,
     queryFn: fetchClusters,
     initialData: initialData,
     staleTime: staleTime.static,
