@@ -1,211 +1,60 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { AlumniCard, Alumni } from '@/components/features/dashboard/AlumniCard';
 import { CustomDropdown } from '@/components/ui/CustomDropdown';
 import { motion } from 'framer-motion';
-
-// Mock alumni data
-const mockAlumni: Alumni[] = [
-  {
-    id: '1',
-    name: 'Budi Santoso',
-    email: 'budi.santoso@email.com',
-    batch: '2018',
-    field: 'Technology',
-    location: 'Jakarta',
-    avatar: 'https://ui-avatars.com/api/?name=Budi+Santoso&background=E21C24&color=fff',
-    bio: 'Passionate technologist and social entrepreneur committed to leveraging technology for positive impact. Alumni of Rumah Kepemimpinan with 6+ years of experience in software engineering and community development.',
-    currentRole: 'Senior Software Engineer',
-    company: 'Tech for Good Indonesia',
-    skills: ['React', 'Node.js', 'Leadership', 'Community Building', 'Social Impact'],
-    linkedin: 'https://linkedin.com/in/budisantoso',
-    programs: ['Leadership Training 2018', 'Tech Innovation Workshop', 'Alumni Mentorship Program'],
-    experience: [
-      { title: 'Senior Software Engineer', company: 'Tech for Good Indonesia', period: '2021 - Present' },
-      { title: 'Software Engineer', company: 'Startup Hub Jakarta', period: '2018 - 2021' },
-    ],
-    education: [
-      { degree: 'Bachelor of Computer Science', institution: 'Universitas Indonesia', year: '2018' },
-    ],
-  },
-  {
-    id: '2',
-    name: 'Siti Nurhaliza',
-    email: 'siti.nurhaliza@email.com',
-    batch: '2019',
-    field: 'Education',
-    location: 'Bandung',
-    avatar: 'https://ui-avatars.com/api/?name=Siti+Nurhaliza&background=1E40AF&color=fff',
-    bio: 'Dedicated educator and advocate for quality education for all. Experienced in curriculum development and teacher training programs across Indonesia.',
-    currentRole: 'Education Program Manager',
-    company: 'Teach for Indonesia',
-    skills: ['Curriculum Development', 'Teacher Training', 'Educational Leadership', 'Community Engagement'],
-    linkedin: 'https://linkedin.com/in/sitinurhaliza',
-    programs: ['Education Leadership Program', 'Community Outreach Initiative 2019'],
-    experience: [
-      { title: 'Education Program Manager', company: 'Teach for Indonesia', period: '2020 - Present' },
-      { title: 'Teacher & Curriculum Developer', company: 'Sekolah Penggerak', period: '2019 - 2020' },
-    ],
-    education: [
-      { degree: 'Master of Education', institution: 'Universitas Pendidikan Indonesia', year: '2019' },
-    ],
-  },
-  {
-    id: '3',
-    name: 'Ahmad Yani',
-    email: 'ahmad.yani@email.com',
-    batch: '2017',
-    field: 'Healthcare',
-    location: 'Surabaya',
-    avatar: 'https://ui-avatars.com/api/?name=Ahmad+Yani&background=059669&color=fff',
-    bio: 'Healthcare innovator focused on improving access to quality medical services in remote areas. Leading telemedicine initiatives and community health programs across Eastern Indonesia.',
-    currentRole: 'Healthcare Innovation Lead',
-    company: 'Halodoc',
-    skills: ['Healthcare Management', 'Telemedicine', 'Public Health', 'Project Management', 'Community Health'],
-    linkedin: 'https://linkedin.com/in/ahmadyani',
-    programs: ['Leadership Training 2017', 'Healthcare Innovation Summit', 'Rural Health Initiative'],
-    experience: [
-      { title: 'Healthcare Innovation Lead', company: 'Halodoc', period: '2019 - Present' },
-      { title: 'Community Health Coordinator', company: 'Kementerian Kesehatan RI', period: '2017 - 2019' },
-    ],
-    education: [
-      { degree: 'Bachelor of Public Health', institution: 'Universitas Airlangga', year: '2017' },
-    ],
-  },
-  {
-    id: '4',
-    name: 'Dewi Lestari',
-    email: 'dewi.lestari@email.com',
-    batch: '2020',
-    field: 'Business',
-    location: 'Yogyakarta',
-    avatar: 'https://ui-avatars.com/api/?name=Dewi+Lestari&background=DC2626&color=fff',
-    bio: 'Social entrepreneur empowering local artisans and women-owned businesses through sustainable business models. Building bridges between traditional crafts and modern markets.',
-    currentRole: 'Founder & CEO',
-    company: 'Karya Nusantara',
-    skills: ['Social Entrepreneurship', 'Business Development', 'Supply Chain Management', 'Women Empowerment', 'Marketing'],
-    linkedin: 'https://linkedin.com/in/dewilestari',
-    programs: ['Entrepreneurship Training 2020', 'Women Leadership Program', 'Social Business Workshop'],
-    experience: [
-      { title: 'Founder & CEO', company: 'Karya Nusantara', period: '2020 - Present' },
-      { title: 'Business Development Manager', company: 'ANGIN (Angel Investment Network Indonesia)', period: '2018 - 2020' },
-    ],
-    education: [
-      { degree: 'Bachelor of Business Administration', institution: 'Universitas Gadjah Mada', year: '2018' },
-    ],
-  },
-  {
-    id: '5',
-    name: 'Rudi Hartono',
-    email: 'rudi.hartono@email.com',
-    batch: '2018',
-    field: 'Social Impact',
-    location: 'Semarang',
-    avatar: 'https://ui-avatars.com/api/?name=Rudi+Hartono&background=7C3AED&color=fff',
-    bio: 'Community organizer and advocate for youth empowerment in underserved communities. Passionate about creating pathways for young leaders to drive social change through grassroots movements.',
-    currentRole: 'Program Director',
-    company: 'Indonesia Mengajar',
-    skills: ['Community Organizing', 'Youth Development', 'Program Management', 'Advocacy', 'Public Speaking'],
-    linkedin: 'https://linkedin.com/in/rudihartono',
-    programs: ['Leadership Training 2018', 'Community Development Program', 'Alumni Mentorship Program'],
-    experience: [
-      { title: 'Program Director', company: 'Indonesia Mengajar', period: '2020 - Present' },
-      { title: 'Community Development Officer', company: 'Plan International Indonesia', period: '2018 - 2020' },
-    ],
-    education: [
-      { degree: 'Bachelor of Sociology', institution: 'Universitas Diponegoro', year: '2018' },
-    ],
-  },
-  {
-    id: '6',
-    name: 'Maya Putri',
-    email: 'maya.putri@email.com',
-    batch: '2019',
-    field: 'Environment',
-    location: 'Bali',
-    avatar: 'https://ui-avatars.com/api/?name=Maya+Putri&background=EA580C&color=fff',
-    bio: 'Environmental activist and marine conservation specialist working to protect Indonesia\'s ocean ecosystems. Leading coastal community initiatives for sustainable fishing and plastic waste reduction.',
-    currentRole: 'Marine Conservation Manager',
-    company: 'WWF Indonesia',
-    skills: ['Marine Conservation', 'Environmental Policy', 'Community Engagement', 'Sustainability', 'Research & Analysis'],
-    linkedin: 'https://linkedin.com/in/mayaputri',
-    programs: ['Environmental Leadership 2019', 'Conservation Workshop', 'Sustainable Development Training'],
-    experience: [
-      { title: 'Marine Conservation Manager', company: 'WWF Indonesia', period: '2021 - Present' },
-      { title: 'Environmental Education Coordinator', company: 'Coral Triangle Center', period: '2019 - 2021' },
-    ],
-    education: [
-      { degree: 'Master of Environmental Science', institution: 'Institut Pertanian Bogor', year: '2019' },
-    ],
-  },
-  {
-    id: '7',
-    name: 'Andi Wijaya',
-    email: 'andi.wijaya@email.com',
-    batch: '2021',
-    field: 'Technology',
-    location: 'Medan',
-    avatar: 'https://ui-avatars.com/api/?name=Andi+Wijaya&background=0891B2&color=fff',
-    bio: 'Full-stack developer and tech educator bridging the digital divide in rural Indonesia. Building educational platforms and training programs to equip youth with in-demand digital skills.',
-    currentRole: 'Lead Software Engineer',
-    company: 'Ruangguru',
-    skills: ['Full-Stack Development', 'EdTech', 'Mobile Development', 'Tech Training', 'Product Management'],
-    linkedin: 'https://linkedin.com/in/andiwijaya',
-    programs: ['Leadership Training 2021', 'Tech Innovation Workshop', 'Digital Literacy Initiative'],
-    experience: [
-      { title: 'Lead Software Engineer', company: 'Ruangguru', period: '2022 - Present' },
-      { title: 'Software Engineer', company: 'Gojek', period: '2021 - 2022' },
-    ],
-    education: [
-      { degree: 'Bachelor of Computer Engineering', institution: 'Universitas Sumatera Utara', year: '2021' },
-    ],
-  },
-  {
-    id: '8',
-    name: 'Rina Kusuma',
-    email: 'rina.kusuma@email.com',
-    batch: '2020',
-    field: 'Arts & Culture',
-    location: 'Malang',
-    avatar: 'https://ui-avatars.com/api/?name=Rina+Kusuma&background=DB2777&color=fff',
-    bio: 'Cultural heritage advocate and performing arts director preserving and modernizing traditional Indonesian arts. Creating platforms for young artists to explore their cultural identity through contemporary expressions.',
-    currentRole: 'Cultural Program Director',
-    company: 'Taman Budaya Jawa Timur',
-    skills: ['Cultural Management', 'Performing Arts', 'Event Production', 'Community Arts', 'Heritage Preservation'],
-    linkedin: 'https://linkedin.com/in/rinakusuma',
-    programs: ['Arts Leadership 2020', 'Cultural Innovation Workshop', 'Community Arts Initiative'],
-    experience: [
-      { title: 'Cultural Program Director', company: 'Taman Budaya Jawa Timur', period: '2021 - Present' },
-      { title: 'Arts Coordinator', company: 'Institut Kesenian Jakarta', period: '2020 - 2021' },
-    ],
-    education: [
-      { degree: 'Bachelor of Performing Arts', institution: 'Institut Seni Indonesia Yogyakarta', year: '2020' },
-    ],
-  },
-];
+import { fetchAlumni } from '@/lib/queries/dashboard';
+import { queryKeys, staleTime } from '@/lib/queries';
+import type { Profile } from '@/lib/supabase/types';
 
 export default function AlumniDirectoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBatch, setSelectedBatch] = useState('');
 
-  // Filter alumni based on search and batch
-  const filteredAlumni = mockAlumni.filter((alumni) => {
-    const matchesSearch = alumni.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         alumni.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         alumni.field.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesBatch = !selectedBatch || alumni.batch === selectedBatch;
-    return matchesSearch && matchesBatch;
+  const { data: profilesData = [], isLoading } = useQuery({
+    queryKey: queryKeys.alumni,
+    queryFn: fetchAlumni,
+    staleTime: staleTime.semiDynamic,
   });
 
-  // Get unique batches for filter
-  const batches = Array.from(new Set(mockAlumni.map((a) => a.batch))).sort();
+  const alumni: Alumni[] = useMemo(() => {
+    return (profilesData as Profile[]).map((profile) => ({
+      id: profile.id,
+      name: profile.name || '',
+      email: profile.email || '',
+      batch: profile.angkatan ? `RK Angkatan ${profile.angkatan}` : '',
+      field: profile.job_title || '',
+      location: profile.location || '',
+      avatar: profile.photo || undefined,
+      currentRole: profile.job_title || undefined,
+      company: profile.company || undefined,
+      linkedin: profile.linkedin || undefined,
+    }));
+  }, [profilesData]);
 
-  // Create dropdown options
-  const batchOptions = [
-    { value: '', label: 'All Batches' },
-    ...batches.map(batch => ({ value: batch, label: `Angkatan ${batch}` }))
-  ];
+  const filteredAlumni = useMemo(() => {
+    return alumni.filter((a) => {
+      const matchesSearch =
+        a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        a.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        a.field.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesBatch = !selectedBatch || a.batch === selectedBatch;
+      return matchesSearch && matchesBatch;
+    });
+  }, [alumni, searchQuery, selectedBatch]);
+
+  const batches = useMemo(() => {
+    return Array.from(new Set(alumni.map((a) => a.batch))).filter(Boolean).sort();
+  }, [alumni]);
+
+  const batchOptions = useMemo(() => {
+    return [
+      { value: '', label: 'All Batches' },
+      ...batches.map((batch) => ({ value: batch, label: batch })),
+    ];
+  }, [batches]);
 
   const handleAlumniClick = (alumni: Alumni) => {
     // Use Next.js router for client-side navigation (no page reload)
@@ -274,12 +123,16 @@ export default function AlumniDirectoryPage() {
       <div className="mb-6">
         <p className="text-sm text-gray-600">
           Showing <span className="font-semibold text-gray-900">{filteredAlumni.length}</span> of{' '}
-          <span className="font-semibold text-gray-900">{mockAlumni.length}</span> alumni
+          <span className="font-semibold text-gray-900">{alumni.length}</span> alumni
         </p>
       </div>
 
-      {/* Alumni Grid */}
-      {filteredAlumni.length > 0 ? (
+      {/* Loading State */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-16">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-iark-red border-t-transparent"></div>
+        </div>
+      ) : filteredAlumni.length > 0 ? (
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"
           initial={{ opacity: 0 }}
